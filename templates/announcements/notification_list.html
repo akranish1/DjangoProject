@@ -1,0 +1,64 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}Notifications · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Notifications{% endblock %}
+{% block page_subheading %}{{ unread_count }} unread of {{ page_obj.paginator.count }} total{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <h1>Your notification centre</h1>
+    <p>Registration updates, event changes, attendance records and organiser announcements.</p>
+  </div>
+  <form method="post" action="{% url 'announcements:mark_all_read' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{% url 'announcements:notifications' %}">
+    <button class="btn btn-secondary" type="submit" {% if not unread_count %}disabled aria-disabled="true"{% endif %} data-mark-all-read data-url="{% url 'announcements:mark_all_read' %}" data-reload="yes">
+      <svg aria-hidden="true"><use href="#i-check"></use></svg>Mark all as read
+    </button>
+  </form>
+</div>
+
+<div class="card card-flush" data-notification-panel data-open-url="{% url 'announcements:notifications' %}">
+  <div class="card-header">
+    <div class="tabs" style="border:0" role="tablist" aria-label="Notification filters">
+      <a class="tab {% if state == 'all' %}is-active{% endif %}" href="{% url 'announcements:notifications' %}?state=all">All</a>
+      <a class="tab {% if state == 'unread' %}is-active{% endif %}" href="{% url 'announcements:notifications' %}?state=unread">Unread <span class="count">{{ unread_count }}</span></a>
+      <a class="tab {% if state == 'read' %}is-active{% endif %}" href="{% url 'announcements:notifications' %}?state=read">Read</a>
+    </div>
+    <div class="row" style="gap:8px">
+      {% for value, label in kind_choices %}
+        <a class="chip {% if kind == value %}is-active{% endif %}" href="{% url 'announcements:notifications' %}?state={{ state }}&kind={{ value }}">{{ label }}</a>
+      {% endfor %}
+      {% if kind %}<a class="chip" href="{% url 'announcements:notifications' %}?state={{ state }}">Clear</a>{% endif %}
+    </div>
+  </div>
+
+  <div class="notif-list">
+    {% for notification in notifications %}
+      <div class="notif-item {% if not notification.is_read %}is-unread{% endif %}" data-notification-id="{{ notification.pk }}" data-link="{{ notification.link }}" tabindex="0" role="button">
+        <span class="notif-icon"><svg aria-hidden="true"><use href="#i-{{ notification.icon }}"></use></svg></span>
+        <div style="flex:1;min-width:0">
+          <div class="row-between" style="gap:10px">
+            <strong>{{ notification.title }}</strong>
+            <span class="tiny muted nowrap">{{ notification.created_at|timesince }} ago</span>
+          </div>
+          <p class="small muted mb-1" style="margin:4px 0 0">{{ notification.message }}</p>
+          <div class="row" style="gap:10px">
+            <span class="badge badge-plain badge-brand">{{ notification.get_kind_display }}</span>
+            {% if notification.event %}<a class="small" href="{% url 'events:detail' slug=notification.event.slug %}">{{ notification.event.title }}</a>{% endif %}
+            {% if notification.link %}<span class="tiny muted">Click to open</span>{% endif %}
+          </div>
+        </div>
+        {% if not notification.is_read %}<span class="notif-dot" data-unread-dot aria-label="Unread"></span>{% endif %}
+      </div>
+    {% empty %}
+      <div style="padding:22px">
+        {% include "partials/empty_state.html" with icon="i-bell" title="No notifications" message="You are all caught up. Registration confirmations, announcements and event updates will appear here." %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

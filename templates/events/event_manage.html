@@ -1,0 +1,212 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui humanize %}
+
+{% block title %}Manage {{ event.title }} · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Manage event{% endblock %}
+{% block page_subheading %}{{ event.title }}{% endblock %}
+{% block sidebar_context %}Organiser console{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <div class="row" style="gap:9px">
+      <span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span>
+      <span class="badge badge-plain badge-brand">{{ event.category.name }}</span>
+      <span class="small muted">{{ event.start_time|date:"D, d M Y · H:i" }}</span>
+    </div>
+    <p class="mt-2">{{ event.summary|default:event.description|truncatewords:22 }}</p>
+  </div>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{{ event.get_absolute_url }}"><svg aria-hidden="true"><use href="#i-eye"></use></svg>View public page</a>
+    <a class="btn btn-secondary" href="{% url 'events:update' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-edit"></use></svg>Edit</a>
+    <div class="dropdown" data-dropdown>
+      <button class="btn btn-ghost" data-dropdown-trigger aria-expanded="false">More <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+      <div class="dropdown-menu">
+        {% if event.status == 'draft' %}
+          <form method="post" action="{% url 'events:publish' slug=event.slug %}">{% csrf_token %}<input type="hidden" name="action" value="publish">
+            <button class="dropdown-item" type="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Publish event</button></form>
+        {% elif event.status == 'published' %}
+          <form method="post" action="{% url 'events:complete' slug=event.slug %}" data-confirm="Mark “{{ event.title }}” as completed? Attendance can no longer be edited afterwards (admins can still change it).">{% csrf_token %}
+            <button class="dropdown-item" type="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Mark completed</button></form>
+          <form method="post" action="{% url 'events:publish' slug=event.slug %}">{% csrf_token %}<input type="hidden" name="action" value="unpublish">
+            <button class="dropdown-item" type="submit"><svg aria-hidden="true"><use href="#i-eye"></use></svg>Move back to draft</button></form>
+        {% endif %}
+        <a class="dropdown-item" href="{% url 'announcements:create' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-megaphone"></use></svg>Post announcement</a>
+        <a class="dropdown-item" href="{% url 'events:broadcast' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-bell"></use></svg>Message participants</a>
+        <form method="post" action="{% url 'events:duplicate' slug=event.slug %}">{% csrf_token %}
+          <button class="dropdown-item" type="submit"><svg aria-hidden="true"><use href="#i-plus"></use></svg>Duplicate as draft</button></form>
+        {% if event.status != 'cancelled' %}
+          <a class="dropdown-item" href="{% url 'events:cancel' slug=event.slug %}" style="color:var(--danger-fg)"><svg aria-hidden="true"><use href="#i-alert"></use></svg>Cancel event</a>
+        {% endif %}
+        <div class="dropdown-sep"></div>
+        <a class="dropdown-item" href="{% url 'events:delete' slug=event.slug %}" style="color:var(--danger-fg)"><svg aria-hidden="true"><use href="#i-trash"></use></svg>Delete event</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-4 mb-3">
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div><span class="badge badge-plain">{{ summary.confirmed }} confirmed</span></div>
+    <div class="stat-value">{{ event.seats_taken }}</div>
+    <div class="stat-label">Registered</div>
+    <div class="stat-meta">of {{ event.capacity }} seats · {{ event.seats_remaining }} free</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-clock"></use></svg></div></div>
+    <div class="stat-value">{{ summary.waitlisted }}</div>
+    <div class="stat-label">Waitlisted</div>
+    <div class="stat-meta">Promoted automatically when seats free up</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div>
+    <div class="stat-value">{{ summary.attendance_rate }}%</div>
+    <div class="stat-label">Attendance rate</div>
+    <div class="stat-meta">{{ summary.marked }} marked · {{ summary.unmarked }} unmarked</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-chart"></use></svg></div></div>
+    <div class="stat-value">{{ event.occupancy }}%</div>
+    <div class="stat-label">Capacity used</div>
+    <div class="stat-meta">Updated {{ event.updated_at|timesince }} ago</div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:20px">
+  <div class="stack">
+    <div class="card card-flush">
+      <div class="card-header">
+        <h2>Registrations</h2>
+        <div class="row" style="gap:8px">
+          <a class="btn btn-sm btn-secondary" href="{% url 'registrations:participants' slug=event.slug %}">All participants</a>
+          <a class="btn btn-sm btn-ghost" href="{% url 'registrations:export' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>CSV</a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Latest registrations for {{ event.title }}</caption>
+          <thead><tr><th scope="col">Participant</th><th scope="col">Ticket</th><th scope="col">Status</th><th scope="col">Registered</th><th scope="col" class="text-right">Actions</th></tr></thead>
+          <tbody>
+            {% for registration in registrations|slice:":12" %}
+              <tr>
+                <td>
+                  <div class="person">
+                    <span class="avatar avatar-sm">{{ registration.participant.initials }}</span>
+                    <div class="person-text">
+                      <div class="person-name">{{ registration.participant.display_name }}</div>
+                      <div class="person-sub">{{ registration.participant.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="mono small">{{ registration.ticket_code }}</td>
+                <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+                <td class="small muted">{{ registration.registered_at|date:"d M, H:i" }}</td>
+                <td>
+                  <div class="cell-actions">
+                    <a class="btn btn-xs btn-ghost" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}">Ticket</a>
+                    {% if registration.status != 'cancelled' %}
+                      <a class="btn btn-xs btn-ghost" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}" style="color:var(--danger-fg)">Cancel</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5"><div class="empty" style="border:0"><p class="mb-0">No registrations yet. Share the event link to get started.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if event.seats_taken %}
+        <div class="card-footer row-between">
+          <span class="small muted">Showing the most recent {{ registrations|slice:":12"|length }} of {{ event.seats_taken }} active registration{{ event.seats_taken|pluralize }}.</span>
+          <a class="btn btn-sm btn-secondary" href="{% url 'registrations:participants' slug=event.slug %}">Manage all</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Attendance</h2>
+        <div class="row" style="gap:8px">
+          <a class="btn btn-sm btn-secondary" href="{% url 'registrations:attendance' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-check"></use></svg>Open sheet</a>
+          <a class="btn btn-sm btn-ghost" href="{% url 'registrations:attendance_summary' slug=event.slug %}">Summary</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid grid-4">
+          <div><div class="stat-value" style="font-size:1.4rem">{{ summary.present }}</div><div class="tiny muted">Present</div></div>
+          <div><div class="stat-value" style="font-size:1.4rem">{{ summary.late }}</div><div class="tiny muted">Late</div></div>
+          <div><div class="stat-value" style="font-size:1.4rem">{{ summary.absent }}</div><div class="tiny muted">Absent</div></div>
+          <div><div class="stat-value" style="font-size:1.4rem">{{ summary.unmarked }}</div><div class="tiny muted">Unmarked</div></div>
+        </div>
+        <div class="progress mt-3"><span style="width:{{ summary.attendance_rate }}%"></span></div>
+        <p class="small muted mt-2 mb-0">{{ summary.attendance_rate }}% of marked participants attended.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Announcements</h2>
+        <a class="btn btn-sm btn-primary" href="{% url 'announcements:create' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>New</a>
+      </div>
+      <div class="card-body stack">
+        {% for announcement in announcements %}
+          <article class="panel">
+            <div class="row-between">
+              <h3 style="margin:0;font-size:.98rem">{{ announcement.title }}{% if announcement.is_pinned %} <span class="badge badge-brand badge-plain">Pinned</span>{% endif %}</h3>
+              <span class="tiny muted">{{ announcement.created_at|date:"d M, H:i" }}</span>
+            </div>
+            <p class="small mb-1" style="margin-top:8px">{{ announcement.body|truncatewords:32 }}</p>
+            <div class="row-between">
+              <span class="tiny muted">{{ announcement.notified_count }} notified</span>
+              <div class="row" style="gap:6px">
+                <form method="post" action="{% url 'announcements:toggle_pin' pk=announcement.pk %}">{% csrf_token %}
+                  <button class="btn btn-xs btn-ghost" type="submit">{% if announcement.is_pinned %}Unpin{% else %}Pin{% endif %}</button></form>
+                <form method="post" action="{% url 'announcements:delete' pk=announcement.pk %}" data-confirm="Delete the announcement “{{ announcement.title }}”? Participants keep the notifications they already received.">{% csrf_token %}
+                  <button class="btn btn-xs btn-ghost" type="submit" style="color:var(--danger-fg)">Delete</button></form>
+              </div>
+            </div>
+          </article>
+        {% empty %}
+          <p class="muted small mb-0">No announcements yet. Post one to notify every registered participant in-app.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Quick actions</h3>
+      <div class="stack-sm">
+        <a class="btn btn-secondary btn-block" href="{% url 'registrations:attendance' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-check"></use></svg>Take attendance</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'announcements:create' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-megaphone"></use></svg>Post announcement</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'events:broadcast' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-bell"></use></svg>Message participants</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'registrations:participants' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-users"></use></svg>Participant list</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'registrations:export' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Export CSV</a>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Event snapshot</h3>
+      <div class="detail-list">
+        <div class="detail-item">
+          <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+          <div><div class="detail-label">When</div><div class="detail-value">{{ event.start_time|date:"d M Y, H:i" }}</div><div class="small muted">Ends {{ event.end_time|date:"d M Y, H:i" }}</div></div>
+        </div>
+        <div class="detail-item">
+          <svg aria-hidden="true"><use href="#i-pin"></use></svg>
+          <div><div class="detail-label">Venue</div><div class="detail-value">{{ event.venue.name }}</div><div class="small muted">{{ event.venue.city }}</div></div>
+        </div>
+        <div class="detail-item">
+          <svg aria-hidden="true"><use href="#i-ticket"></use></svg>
+          <div><div class="detail-label">Registration closes</div><div class="detail-value">{{ event.registration_deadline|date:"d M Y, H:i" }}</div></div>
+        </div>
+        <div class="detail-item">
+          <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+          <div><div class="detail-label">Sessions</div><div class="detail-value">{{ sessions|length }} in the running order</div></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

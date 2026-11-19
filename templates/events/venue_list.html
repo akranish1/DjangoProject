@@ -1,0 +1,64 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Venues · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Venues{% endblock %}
+{% block page_subheading %}Capacity limits here are validated against event capacity{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <h1>Venue library</h1>
+    <p>{{ page_obj.paginator.count }} venue{{ page_obj.paginator.count|pluralize }} available for your events.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'events:venue_create' %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>Add venue</a>
+</div>
+
+<div class="card card-flush">
+  <div class="card-header">
+    <form method="get" class="form-row-inline" role="search">
+      <label class="visually-hidden" for="venue-search">Search venues</label>
+      <input class="text-input text-sm" id="venue-search" type="search" name="q" value="{{ q }}" placeholder="Search name, city or state…" style="width:260px">
+      <button class="btn btn-sm btn-secondary" type="submit">Search</button>
+      {% if q %}<a class="btn btn-sm btn-ghost" href="{% url 'events:venues' %}">Clear</a>{% endif %}
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Venues with their capacity and event counts</caption>
+      <thead>
+        <tr><th scope="col">Venue</th><th scope="col">City</th><th scope="col">Capacity</th><th scope="col">Events</th><th scope="col">Status</th><th scope="col" class="text-right">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for venue in venues %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm" style="background:linear-gradient(135deg,var(--brand-500),var(--accent-500))"><svg aria-hidden="true" style="width:16px;height:16px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-building"></use></svg></span>
+                <div class="person-text">
+                  <div class="person-name">{{ venue.name }}</div>
+                  <div class="person-sub">{{ venue.address_line|default:"No street address" }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ venue.city }}{% if venue.state %}, {{ venue.state }}{% endif %}</td>
+            <td>{{ venue.capacity_label }}</td>
+            <td><span class="badge badge-plain">{{ venue.event_count }} total</span> <span class="badge badge-info">{{ venue.upcoming_count }} upcoming</span></td>
+            <td><span class="badge badge-{% if venue.is_active %}success{% else %}danger{% endif %}">{% if venue.is_active %}Active{% else %}Retired{% endif %}</span></td>
+            <td>
+              <div class="cell-actions">
+                {% if current_user.is_admin or venue.created_by_id == current_user.pk or not venue.created_by_id %}
+                  <a class="btn btn-xs btn-secondary" href="{% url 'events:venue_update' pk=venue.pk %}">Edit</a>
+                {% else %}
+                  <span class="tiny muted">Managed by another organiser</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">{% include "partials/empty_state.html" with icon="i-building" title="No venues found" message="Add your first venue to start creating events with capacity limits." action_url="/events/venues/new/" action_label="Add a venue" %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

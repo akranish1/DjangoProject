@@ -1,0 +1,39 @@
+{% load ui %}
+<div class="grid grid-4 mb-3">
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div><div class="stat-value">{{ summary.present }}</div><div class="stat-label">Present</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-clock"></use></svg></div></div><div class="stat-value">{{ summary.late }}</div><div class="stat-label">Late</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-danger"><svg aria-hidden="true"><use href="#i-x"></use></svg></div></div><div class="stat-value">{{ summary.absent }}</div><div class="stat-label">Absent</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-info"></use></svg></div></div><div class="stat-value">{{ summary.unmarked }}</div><div class="stat-label">Not marked</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Recorded attendance</h2>
+    <span class="badge badge-plain">{{ summary.attendance_rate }}% attendance rate</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Attendance records</caption>
+      <thead><tr><th scope="col">Participant</th><th scope="col">Ticket</th><th scope="col">Status</th><th scope="col">Checked in</th><th scope="col">Note</th><th scope="col">Marked by</th></tr></thead>
+      <tbody>
+        {% for attendance in attendance_records %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm">{{ attendance.registration.participant.initials }}</span>
+                <div class="person-text"><div class="person-name">{{ attendance.registration.participant.display_name }}</div><div class="person-sub">{{ attendance.registration.participant.email }}</div></div>
+              </div>
+            </td>
+            <td class="mono small">{{ attendance.registration.ticket_code }}</td>
+            <td><span class="badge badge-{{ attendance.tone }}">{{ attendance.get_status_display }}</span></td>
+            <td class="small muted">{{ attendance.checked_in_at|date:"d M Y, H:i"|default:"—" }}</td>
+            <td class="small muted">{{ attendance.note|default:"—" }}</td>
+            <td class="small muted">{{ attendance.marked_by.display_name|default:"—" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">{% include "partials/empty_state.html" with icon="i-check" title="No attendance recorded yet" message="Use the attendance sheet or the quick check-in form to record who showed up." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

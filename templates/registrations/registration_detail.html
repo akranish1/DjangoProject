@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Ticket {{ registration.ticket_code }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container container-wide">
+    <div class="breadcrumb">
+      <a href="{% url 'registrations:mine' %}">My registrations</a>
+      <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+      <span>{{ event.title }}</span>
+    </div>
+    <div class="row-between">
+      <div>
+        <h1 style="margin-bottom:6px">Ticket {{ registration.ticket_code }}</h1>
+        <div class="row" style="gap:9px">
+          <span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span>
+          <span class="badge badge-plain">{{ event.category.name }}</span>
+          <span class="small muted">Registered {{ registration.registered_at|date:"d M Y, H:i" }}</span>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn btn-secondary" data-print><svg aria-hidden="true"><use href="#i-download"></use></svg>Print / save</button>
+        {% if registration.can_be_cancelled %}
+          <a class="btn btn-ghost" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}" style="color:var(--danger-fg)">Cancel registration</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container container-wide">
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) 380px;align-items:start;gap:24px">
+      <div class="stack">
+        <div class="card card-pad ticket">
+          <div class="row-between">
+            <div>
+              <div class="detail-label">Event</div>
+              <h2 style="margin:.2em 0">{{ event.title }}</h2>
+              <div class="small muted">{{ event.start_time|date:"D, d M Y" }} · {{ event.start_time|date:"H:i" }} – {{ event.end_time|date:"H:i" }}</div>
+            </div>
+            <div class="text-right">
+              <div class="detail-label">Ticket code</div>
+              <div class="mono" style="font-size:1.2rem;font-weight:700">{{ registration.ticket_code }}</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="grid grid-4" style="gap:14px">
+            <div>
+              <div class="detail-label">Attendee</div>
+              <div class="detail-value">{{ registration.participant.display_name }}</div>
+              <div class="small muted">{{ registration.participant.email }}</div>
+            </div>
+            <div>
+              <div class="detail-label">Venue</div>
+              <div class="detail-value">{{ event.venue.name }}</div>
+              <div class="small muted">{{ event.venue.city }}</div>
+            </div>
+            <div>
+              <div class="detail-label">Seats</div>
+              <div class="detail-value">{{ event.capacity }} total</div>
+              <div class="small muted">{{ event.seats_taken }} registered</div>
+            </div>
+            <div>
+              <div class="detail-label">Attendance</div>
+              {% if registration.attendance %}
+                <span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}</span>
+                {% if registration.attendance.checked_in_at %}<div class="small muted">Checked in {{ registration.attendance.checked_in_at|date:"H:i" }}</div>{% endif %}
+              {% else %}
+                <div class="detail-value">Not marked yet</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if registration.notes %}
+          <div class="card">
+            <div class="card-header"><h2>Your note to the organiser</h2></div>
+            <div class="card-body"><p class="mb-0">{{ registration.notes }}</p></div>
+          </div>
+        {% endif %}
+
+        <div class="card">
+          <div class="card-header"><h2>Event announcements</h2><span class="small muted">{{ event.announcements.count }} posted</span></div>
+          <div class="card-body stack">
+            {% for announcement in event.announcements.all %}
+              <article class="panel">
+                <div class="row-between">
+                  <strong>{{ announcement.title }}</strong>
+                  <span class="tiny muted">{{ announcement.created_at|date:"d M, H:i" }}</span>
+                </div>
+                <p class="small mb-0" style="margin-top:6px">{{ announcement.body|truncatewords:40 }}</p>
+                <a class="small" href="{% url 'announcements:detail' pk=announcement.pk %}">Read full announcement</a>
+              </article>
+            {% empty %}
+              <p class="small muted mb-0">No announcements for this event yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <aside class="stack sticky-side">
+        <div class="card card-pad">
+          <h3 style="font-size:1rem">Cancellation policy</h3>
+          {% if registration.can_be_cancelled %}
+            <p class="small muted">You can cancel until <strong>{{ event.registration_deadline|date:"d M Y, H:i" }}</strong> or until the event starts — whichever comes first. The seat is offered to the next waitlisted participant.</p>
+            <a class="btn btn-secondary btn-block" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}">Cancel this registration</a>
+          {% else %}
+            <p class="small muted mb-0">This registration can no longer be cancelled — the deadline passed, the event started, or it is already cancelled.</p>
+          {% endif %}
+          <div class="divider"></div>
+          <a class="btn btn-ghost btn-block" href="{{ event.get_absolute_url }}">View event page</a>
+        </div>
+
+        {% if registration.cancelled_at %}
+          <div class="card card-pad">
+            <h3 style="font-size:1rem">Cancellation record</h3>
+            <div class="small muted">Cancelled {{ registration.cancelled_at|date:"d M Y, H:i" }}{% if registration.cancelled_by %} by {{ registration.cancelled_by.display_name }}{% endif %}.</div>
+            {% if registration.cancellation_reason %}<div class="small mt-1">Reason: {{ registration.cancellation_reason }}</div>{% endif %}
+          </div>
+        {% endif %}
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

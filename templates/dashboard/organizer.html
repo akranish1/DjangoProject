@@ -1,0 +1,201 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui humanize %}
+
+{% block title %}Organiser dashboard · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Organiser dashboard{% endblock %}
+{% block page_subheading %}Live numbers from your events{% endblock %}
+{% block sidebar_context %}Organiser console{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <h1>Welcome back, {{ current_user.first_name|default:current_user.username }}</h1>
+    <p>{{ totals.published }} published · {{ totals.drafts }} draft · {{ totals.completed }} completed · {{ totals.cancelled }} cancelled</p>
+  </div>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'events:venues' %}"><svg aria-hidden="true"><use href="#i-building"></use></svg>Venues</a>
+    <a class="btn btn-primary" href="{% url 'events:create' %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>Create event</a>
+  </div>
+</div>
+
+<div class="grid grid-4 mb-3">
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-calendar"></use></svg></div><span class="badge badge-plain">{{ totals.total }} total</span></div>
+    <div class="stat-value">{{ totals.published }}</div><div class="stat-label">Published events</div>
+    <div class="stat-meta">{{ totals.drafts }} draft{{ totals.drafts|pluralize }} waiting</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-ticket"></use></svg></div><span class="badge badge-success">{{ registration_stats.confirmed }} confirmed</span></div>
+    <div class="stat-value">{{ seats_used }}</div><div class="stat-label">Seats taken</div>
+    <div class="stat-meta">{{ registration_stats.waitlisted }} waitlisted · {{ registration_stats.cancelled }} cancelled</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-users"></use></svg></div></div>
+    <div class="stat-value">{{ seats_free }}</div><div class="stat-label">Seats remaining</div>
+    <div class="stat-meta">across {{ capacity|intcomma }} total seats</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-chart"></use></svg></div></div>
+    <div class="stat-value">{{ occupancy }}%</div><div class="stat-label">Average occupancy</div>
+    <div class="stat-meta">{{ registration_stats.attended }} attendance record{{ registration_stats.attended|pluralize }}</div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:20px">
+  <div class="stack">
+    <div class="card">
+      <div class="card-header">
+        <div><h2>Registrations in the last 14 days</h2><span class="small muted">Aggregated from live registration records</span></div>
+        <span class="badge badge-plain">Real-time</span>
+      </div>
+      <div class="card-body">
+        <div data-chart data-chart-url="{% url 'dashboard:organizer_chart' %}">
+          <div class="skeleton" style="height:210px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-flush">
+      <div class="card-header">
+        <h2>Upcoming events</h2>
+        <a class="btn btn-sm btn-secondary" href="{% url 'dashboard:organizer' %}">Refresh</a>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Your upcoming events</caption>
+          <thead><tr><th scope="col">Event</th><th scope="col">Starts</th><th scope="col">Registered</th><th scope="col">Capacity</th><th scope="col">Status</th><th scope="col" class="text-right">Manage</th></tr></thead>
+          <tbody>
+            {% for event in upcoming_events %}
+              <tr>
+                <td>
+                  <div class="person">
+                    <span class="avatar avatar-sm {{ event.banner_theme }}"><svg aria-hidden="true" style="width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ event.category.icon }}"></use></svg></span>
+                    <div class="person-text">
+                      <div class="person-name truncate">{{ event.title }}</div>
+                      <div class="person-sub">{{ event.venue.name }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="small muted">{{ event.start_time|date:"d M Y, H:i" }}</td>
+                <td>{{ event.seats_taken }}</td>
+                <td>
+                  <div class="meter">
+                    <div class="meter-top"><span>{{ event.occupancy }}%</span><span>{{ event.capacity }}</span></div>
+                    <div class="progress progress-thin {% if event.is_full %}tone-danger{% elif event.occupancy >= 80 %}tone-warning{% else %}tone-success{% endif %}"><span style="width:{{ event.occupancy }}%"></span></div>
+                  </div>
+                </td>
+                <td><span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span></td>
+                <td class="text-right"><a class="btn btn-xs btn-secondary" href="{% url 'events:manage' slug=event.slug %}">Manage</a></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">{% include "partials/empty_state.html" with icon="i-calendar" title="No upcoming events" message="Create an event and publish it to start collecting registrations." action_url="/events/new/" action_label="Create your first event" %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card-flush">
+      <div class="card-header"><h2>Recent registrations</h2><span class="small muted">Across all of your events</span></div>
+      <div class="table-wrap">
+        <table class="table table-narrow">
+          <caption class="visually-hidden">Recent registrations</caption>
+          <thead><tr><th scope="col">Participant</th><th scope="col">Event</th><th scope="col">Status</th><th scope="col">When</th></tr></thead>
+          <tbody>
+            {% for registration in recent_registrations %}
+              <tr>
+                <td>
+                  <div class="person">
+                    <span class="avatar avatar-sm">{{ registration.participant.initials }}</span>
+                    <div class="person-text"><div class="person-name">{{ registration.participant.display_name }}</div><div class="person-sub">{{ registration.participant.email }}</div></div>
+                  </div>
+                </td>
+                <td class="truncate" style="max-width:220px"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></td>
+                <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+                <td class="small muted">{{ registration.registered_at|timesince }} ago</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="border:0"><p class="mb-0">No registrations yet — share your event link to get started.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Attendance overview</h2><span class="small muted">Most recent events</span></div>
+      <div class="card-body stack">
+        {% for event in attendance_by_event %}
+          <div>
+            <div class="row-between small">
+              <strong class="truncate" style="max-width:60%">{{ event.title }}</strong>
+              <span class="muted">{% if event.marked %}{% widthratio event.attended event.marked 100 %}% of {{ event.marked }} marked{% else %}Not marked yet{% endif %}</span>
+            </div>
+            <div class="progress progress-thin mt-1"><span style="width:{% if event.marked %}{% widthratio event.attended event.marked 100 %}{% else %}0{% endif %}%"></span></div>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">Attendance appears once events start and you mark participants.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Quick actions</h3>
+      <div class="stack-sm">
+        <a class="btn btn-primary btn-block" href="{% url 'events:create' %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>Create event</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'events:venues' %}"><svg aria-hidden="true"><use href="#i-building"></use></svg>Manage venues</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'announcements:notifications' %}"><svg aria-hidden="true"><use href="#i-bell"></use></svg>Notifications</a>
+        <a class="btn btn-secondary btn-block" href="{% url 'registrations:my_attendance' %}"><svg aria-hidden="true"><use href="#i-check"></use></svg>Attendance history</a>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Needs attention</h3>
+      <div class="stack-sm">
+        {% for event in drafts %}
+          <div class="panel">
+            <div class="row-between">
+              <strong class="small truncate" style="max-width:64%">{{ event.title }}</strong>
+              <span class="badge badge-neutral">Draft</span>
+            </div>
+            <div class="tiny muted mt-1">Updated {{ event.updated_at|timesince }} ago</div>
+            <div class="row mt-2" style="gap:6px">
+              <a class="btn btn-xs btn-secondary" href="{% url 'events:update' slug=event.slug %}">Finish</a>
+              <form method="post" action="{% url 'events:publish' slug=event.slug %}">{% csrf_token %}<input type="hidden" name="action" value="publish">
+                <button class="btn btn-xs btn-primary" type="submit">Publish</button>
+              </form>
+            </div>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No drafts waiting — everything you own is published or completed.</p>
+        {% endfor %}
+        {% for event in upcoming_events %}
+          {% if event.is_full %}
+            <div class="panel panel-brand">
+              <div class="row-between"><strong class="small">{{ event.title }}</strong><span class="badge badge-danger">Sold out</span></div>
+              <div class="tiny muted mt-1">{{ event.seats_taken }} registered — export the list or open the waitlist.</div>
+              <a class="btn btn-xs btn-secondary mt-2" href="{% url 'registrations:participants' slug=event.slug %}?status=waitlisted">Review waitlist</a>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Latest announcements</h3>
+      <div class="stack-sm">
+        {% for announcement in announcements %}
+          <div>
+            <strong class="small">{{ announcement.title }}</strong>
+            <div class="tiny muted">{{ announcement.event.title }} · {{ announcement.created_at|date:"d M" }} · {{ announcement.notified_count }} notified</div>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No announcements posted yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

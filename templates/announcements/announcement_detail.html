@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}{{ announcement.title }} · {{ event.title }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container container-wide">
+    <div class="breadcrumb">
+      <a href="{% url 'events:detail' slug=event.slug %}">{{ event.title }}</a>
+      <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+      <span>Announcement</span>
+    </div>
+    <div class="row" style="gap:9px">
+      {% if announcement.is_pinned %}<span class="badge badge-brand"><svg aria-hidden="true" style="width:12px;height:12px"><use href="#i-pin"></use></svg>Pinned</span>{% endif %}
+      <span class="badge badge-plain">{{ announcement.created_at|date:"d M Y, H:i" }}</span>
+      <span class="badge badge-plain">By {{ announcement.author.display_name }}</span>
+    </div>
+    <h1 class="mt-2">{{ announcement.title }}</h1>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container" style="max-width:760px">
+    <article class="card card-pad">
+      <div style="white-space:pre-line">{{ announcement.body }}</div>
+      {% if announcement.is_edited %}<p class="tiny muted mt-3 mb-0">Last edited {{ announcement.updated_at|date:"d M Y, H:i" }}</p>{% endif %}
+    </article>
+    <div class="row mt-3" style="gap:10px">
+      <a class="btn btn-secondary" href="{% url 'events:detail' slug=event.slug %}">Back to event</a>
+      {% if current_user.is_admin or event.organizer_id == current_user.pk %}
+        <a class="btn btn-ghost" href="{% url 'events:manage' slug=event.slug %}">Manage event</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}Users · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}User management{% endblock %}
+{% block page_subheading %}Roles, access and account status{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div><h1>Users</h1><p>{{ page_obj.paginator.count }} account{{ page_obj.paginator.count|pluralize }} match the current filters.</p></div>
+  <a class="btn btn-secondary" href="{% url 'dashboard:export_users' %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Export CSV</a>
+</div>
+
+<div class="card card-flush">
+  <div class="card-header">
+    <form method="get" class="form-row-inline" role="search">
+      <label class="visually-hidden" for="user-search">Search users</label>
+      <input class="text-input text-sm" id="user-search" type="search" name="q" value="{{ q }}" placeholder="Name, username or email…" style="width:240px">
+      <label class="visually-hidden" for="role-filter">Role</label>
+      <select class="select-input select-sm" id="role-filter" name="role">
+        <option value="">All roles</option>
+        {% for value, label in role_choices %}<option value="{{ value }}" {% if role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <label class="visually-hidden" for="state-filter">Status</label>
+      <select class="select-input select-sm" id="state-filter" name="state">
+        <option value="">Any status</option>
+        <option value="active" {% if state == 'active' %}selected{% endif %}>Active only</option>
+        <option value="inactive" {% if state == 'inactive' %}selected{% endif %}>Deactivated</option>
+      </select>
+      <button class="btn btn-sm btn-secondary" type="submit">Apply</button>
+      <a class="btn btn-sm btn-ghost" href="{% url 'dashboard:admin_users' %}">Reset</a>
+    </form>
+  </div>
+  <div data-async-region data-async-url="{% url 'dashboard:admin_users' %}">
+    {% include "dashboard/partials/user_rows.html" %}
+  </div>
+</div>
+{% endblock %}

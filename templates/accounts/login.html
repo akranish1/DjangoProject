@@ -1,0 +1,80 @@
+{% extends "base_shell.html" %}
+
+{% block title %}Sign in · {{ SITE_NAME }}{% endblock %}
+
+{% block body %}
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <a class="brand" href="{% url 'core:home' %}" style="color:#fff">
+      <span class="brand-mark" style="background:rgba(255,255,255,.18);box-shadow:none" aria-hidden="true"><svg><use href="#i-calendar"></use></svg></span>
+      <span style="color:#fff">{{ SITE_NAME }}<small style="color:#dbe4ff">Event management</small></span>
+    </a>
+
+    <div>
+      <span class="eyebrow" style="color:#dbe4ff">Welcome back</span>
+      <h2 style="font-size:2.1rem;max-width:22ch">Everything your events need, in one calm place.</h2>
+      <div class="auth-points mt-3">
+        <div class="auth-point">
+          <svg aria-hidden="true"><use href="#i-check"></use></svg>
+          <div><strong>Organisers</strong><span>Capacity, schedules, attendance and announcements — all server-validated.</span></div>
+        </div>
+        <div class="auth-point">
+          <svg aria-hidden="true"><use href="#i-check"></use></svg>
+          <div><strong>Participants</strong><span>Discover events, hold tickets, join waitlists and track attendance.</span></div>
+        </div>
+        <div class="auth-point">
+          <svg aria-hidden="true"><use href="#i-check"></use></svg>
+          <div><strong>Administrators</strong><span>Platform-wide statistics, role management and an activity trail.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-quote">
+      <p style="margin:0 0 8px;color:#fff">“Registration integrity first: no duplicates, no overbooking, no silent failures.”</p>
+      <div class="small" style="color:#e0e7ff">Transactional seat accounting with database constraints</div>
+    </div>
+  </aside>
+
+  <main class="auth-main" id="main-content">
+    <div class="auth-card">
+      <div class="card">
+        <div class="card-body">
+          <h1 style="font-size:1.6rem;margin-bottom:6px">Sign in to {{ SITE_NAME }}</h1>
+          <p class="muted">Use your username or email address.</p>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-error alert-inline" role="alert">
+              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+              <div class="alert-body">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+            </div>
+          {% endif %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-grid">
+              {% include "partials/form_field.html" with field=form.username wide=True %}
+              {% include "partials/form_field.html" with field=form.password wide=True %}
+            </div>
+            <div class="row-between mt-2">
+              {% include "partials/form_field.html" with field=form.remember_me %}
+              <a class="small" href="{% url 'accounts:password_reset' %}">Forgot your password?</a>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg mt-3" type="submit">Sign in <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+          </form>
+
+          <div class="divider"></div>
+          <p class="text-center small mb-0">New here? <a href="{% url 'accounts:register' %}">Create an account</a> · <a href="{% url 'events:list' %}">Browse events</a></p>
+        </div>
+      </div>
+
+      {% if DEBUG %}
+        <div class="panel mt-3">
+          <div class="detail-label mb-1">Development demo accounts</div>
+          <div class="small muted mono">admin / admin1234 · organizer demo: priya.organizer / demo1234 · participant: aarav.participant / demo1234</div>
+          <div class="tiny muted mt-1">Seeded by <span class="kbd">python manage.py seed_demo</span>. Remove these in production.</div>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}

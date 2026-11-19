@@ -1,0 +1,57 @@
+{% load ui %}
+{% if registrations %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Participants for {{ event.title }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Participant</th><th scope="col">Ticket</th><th scope="col">Status</th>
+          <th scope="col">Attendance</th><th scope="col">Registered</th><th scope="col" class="text-right">Update status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registration in registrations %}
+          <tr data-registration-row="{{ registration.ticket_code }}">
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm">{{ registration.participant.initials }}</span>
+                <div class="person-text">
+                  <div class="person-name">{{ registration.participant.display_name }}</div>
+                  <div class="person-sub">{{ registration.participant.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="mono small">{{ registration.ticket_code }}</td>
+            <td><span class="badge badge-{{ registration.status_tone }}" data-status-badge="{{ registration.pk }}">{{ registration.get_status_display }}</span></td>
+            <td data-attendance-cell>
+              {% if registration.attendance %}
+                <span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}{% if registration.attendance.checked_in_at %} · {{ registration.attendance.checked_in_at|date:"H:i" }}{% endif %}</span>
+              {% else %}
+                <span class="tiny muted">Not marked</span>
+              {% endif %}
+            </td>
+            <td class="small muted">{{ registration.registered_at|date:"d M Y, H:i" }}</td>
+            <td>
+              <div class="cell-actions">
+                <form method="post" action="{% url 'registrations:update_status' pk=registration.pk %}" data-status-form data-registration="{{ registration.pk }}" data-original-status="{{ registration.status }}">
+                  {% csrf_token %}
+                  <label class="visually-hidden" for="status-{{ registration.pk }}">Status for {{ registration.participant.display_name }}</label>
+                  <select class="select-input select-sm" id="status-{{ registration.pk }}" name="status">
+                    <option value="confirmed" {% if registration.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                    <option value="attended" {% if registration.status == 'attended' %}selected{% endif %}>Attended</option>
+                    <option value="no_show" {% if registration.status == 'no_show' %}selected{% endif %}>No show</option>
+                    <option value="cancelled" {% if registration.status == 'cancelled' %}selected{% endif %}>Cancel registration</option>
+                  </select>
+                </form>
+                <a class="btn btn-xs btn-ghost" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}">View</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-users" title="No registrations match" message="Try a different status filter or search term. Participants appear here as soon as they register." %}
+{% endif %}

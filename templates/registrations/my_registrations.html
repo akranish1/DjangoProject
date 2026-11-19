@@ -1,0 +1,48 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}My registrations · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}My registrations{% endblock %}
+{% block page_subheading %}Tickets, waitlists and cancellation control{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-4 mb-3">
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-ticket"></use></svg></div></div>
+    <div class="stat-value">{{ counts.active }}</div><div class="stat-label">Active tickets</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-clock"></use></svg></div></div>
+    <div class="stat-value">{{ counts.waitlisted }}</div><div class="stat-label">Waitlisted</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div>
+    <div class="stat-value">{{ counts.attended }}</div><div class="stat-label">Attended</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-danger"><svg aria-hidden="true"><use href="#i-x"></use></svg></div></div>
+    <div class="stat-value">{{ counts.cancelled }}</div><div class="stat-label">Cancelled</div>
+  </div>
+</div>
+
+<div class="card card-flush">
+  <div class="card-header">
+    <div class="tabs" style="border:0" role="tablist" aria-label="Registration filters">
+      <a class="tab {% if status == 'active' %}is-active{% endif %}" role="tab" aria-selected="{% if status == 'active' %}true{% else %}false{% endif %}" href="{% url 'registrations:mine' %}?status=active">Active <span class="count">{{ counts.active }}</span></a>
+      <a class="tab {% if status == 'waitlisted' %}is-active{% endif %}" role="tab" aria-selected="{% if status == 'waitlisted' %}true{% else %}false{% endif %}" href="{% url 'registrations:mine' %}?status=waitlisted">Waitlisted <span class="count">{{ counts.waitlisted }}</span></a>
+      <a class="tab {% if status == 'past' %}is-active{% endif %}" role="tab" aria-selected="{% if status == 'past' %}true{% else %}false{% endif %}" href="{% url 'registrations:mine' %}?status=past">Past events</a>
+      <a class="tab {% if status == 'cancelled' %}is-active{% endif %}" role="tab" aria-selected="{% if status == 'cancelled' %}true{% else %}false{% endif %}" href="{% url 'registrations:mine' %}?status=cancelled">Cancelled <span class="count">{{ counts.cancelled }}</span></a>
+      <a class="tab {% if status == 'all' %}is-active{% endif %}" role="tab" aria-selected="{% if status == 'all' %}true{% else %}false{% endif %}" href="{% url 'registrations:mine' %}?status=all">All <span class="count">{{ counts.total }}</span></a>
+    </div>
+    <form method="get" class="form-row-inline" role="search">
+      <input type="hidden" name="status" value="{{ status }}">
+      <label class="visually-hidden" for="reg-search">Search registrations</label>
+      <input class="text-input text-sm" id="reg-search" type="search" name="q" value="{{ q }}" placeholder="Search event or ticket…" style="width:220px">
+      <button class="btn btn-sm btn-secondary" type="submit">Search</button>
+    </form>
+  </div>
+  <div data-async-region data-async-url="{% url 'registrations:mine' %}">
+    {% include "registrations/partials/registration_table.html" %}
+  </div>
+</div>
+{% endblock %}

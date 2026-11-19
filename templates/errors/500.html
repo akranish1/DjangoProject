@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong · {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:70px">
+  <div class="container text-center" style="max-width:620px">
+    <div class="empty-art" style="margin:0 auto 18px"><svg aria-hidden="true"><use href="#i-alert"></use></svg></div>
+    <h1>500 · Something went wrong</h1>
+    <p class="lead">The server hit an unexpected error. Nothing you did caused it and no data was lost. Please try again.</p>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-primary" href="{% url 'core:home' %}">Go home</a>
+      <a class="btn btn-secondary" href="{% url 'events:list' %}">Browse events</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

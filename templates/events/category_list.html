@@ -1,0 +1,32 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Categories · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Categories{% endblock %}
+{% block page_subheading %}Administrator only — these power discovery filters{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div><h1>Event categories</h1><p>{{ categories|length }} categor{{ categories|length|pluralize:"y,ies" }} in use across the platform.</p></div>
+  <a class="btn btn-primary" href="{% url 'events:category_create' %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>New category</a>
+</div>
+
+<div class="grid-3">
+  {% for category in categories %}
+    <article class="card card-pad">
+      <div class="row-between">
+        <span class="feature-icon" style="background:{{ category.color }}1f;color:{{ category.color }};margin:0">
+          <svg aria-hidden="true"><use href="#i-{{ category.icon }}"></use></svg>
+        </span>
+        <span class="badge badge-plain">{{ category.event_count }} event{{ category.event_count|pluralize }}</span>
+      </div>
+      <h3 class="mt-2" style="margin-bottom:4px">{{ category.name }}</h3>
+      <p class="small muted">{{ category.description|default:"No description yet." }}</p>
+      <div class="row-between">
+        <span class="tiny muted">{{ category.published_count }} published</span>
+        <a class="btn btn-xs btn-secondary" href="{% url 'events:category_update' slug=category.slug %}">Edit</a>
+      </div>
+    </article>
+  {% empty %}
+    {% include "partials/empty_state.html" with icon="i-filter" title="No categories yet" message="Create categories so participants can filter events by interest." action_url="/events/categories/new/" action_label="Create a category" %}
+  {% endfor %}
+</div>
+{% endblock %}

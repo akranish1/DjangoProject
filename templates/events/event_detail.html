@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load ui humanize %}
+
+{% block title %}{{ event.title }} · {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ event.summary|default:event.description|truncatewords:24 }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="container container-wide">
+    <div class="breadcrumb">
+      <a href="{% url 'core:home' %}">Home</a>
+      <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+      <a href="{% url 'events:list' %}">Events</a>
+      <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+      <a href="{% url 'events:list' %}?category={{ event.category.slug }}">{{ event.category.name }}</a>
+      <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+      <span class="truncate" style="max-width:34ch">{{ event.title }}</span>
+    </div>
+    <div class="row" style="gap:9px">
+      <span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span>
+      <span class="badge badge-brand badge-plain">{{ event.category.name }}</span>
+      {% if event.is_featured %}<span class="badge badge-warning"><svg aria-hidden="true" style="width:12px;height:12px"><use href="#i-star"></use></svg>Featured</span>{% endif %}
+      {% if not event.is_upcoming %}<span class="badge badge-neutral">Finished {{ event.end_time|timesince }} ago</span>{% endif %}
+    </div>
+    <h1 class="mt-2">{{ event.title }}</h1>
+    {% if event.summary %}<p class="lead">{{ event.summary }}</p>{% endif %}
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container container-wide">
+    <div class="grid" style="grid-template-columns:minmax(0,1fr) 366px;align-items:start;gap:26px">
+      <div class="stack">
+        <div class="card card-flush" style="overflow:hidden">
+          {% include "partials/banner.html" with event=event banner_class="banner-sm" %}
+        </div>
+
+        {% if event.status == 'cancelled' %}
+          <div class="alert alert-error alert-inline" role="alert">
+            <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+            <div class="alert-body">
+              <div class="alert-title">This event was cancelled</div>
+              {% if event.cancellation_reason %}<div>{{ event.cancellation_reason }}</div>{% endif %}
+              {% if is_manager %}Registered participants were notified automatically.{% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="card">
+          <div class="card-header">
+            <h2>About this event</h2>
+            <span class="small muted">Published {{ event.created_at|date:"d M Y" }}</span>
+          </div>
+          <div class="card-body">
+            <div style="white-space:pre-line">{{ event.description }}</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Schedule</h2>
+            <span class="small muted">{{ event.duration_label }} total · {{ event.start_time|date:"D, d M Y" }}</span>
+          </div>
+          <div class="card-body">
+            {% if sessions %}
+              <div class="timeline">
+                {% for session in sessions %}
+                  <div class="timeline-item">
+                    <div class="timeline-time">{{ session.time_label }}{% if session.location %} · {{ session.location }}{% endif %}</div>
+                    <div class="timeline-title">{{ session.title }}</div>
+                    {% if session.speaker %}<div class="small muted">Hosted by {{ session.speaker }}</div>{% endif %}
+                    {% if session.description %}<div class="small muted">{{ session.description }}</div>{% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="row" style="gap:14px">
+                <svg aria-hidden="true" style="width:20px;height:20px;stroke:var(--brand-600);fill:none;stroke-width:1.7"><use href="#i-clock"></use></svg>
+                <div>
+                  <div class="detail-value">{{ event.start_time|date:"d M Y, H:i" }} – {{ event.end_time|date:"d M Y, H:i" }}</div>
+                  <div class="small muted">No separate sessions published for this event.</div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Announcements</h2>
+            <span class="small muted">{{ announcements|length }} posted</span>
+          </div>
+          <div class="card-body stack">
+            {% for announcement in announcements %}
+              <article class="panel">
+                <div class="row-between">
+                  <h3 style="margin:0;font-size:1rem">
+                    {% if announcement.is_pinned %}<svg aria-hidden="true" style="width:15px;height:15px;stroke:var(--brand-600);fill:none;stroke-width:1.8;display:inline;vertical-align:-2px"><use href="#i-pin"></use></svg>{% endif %}
+                    {{ announcement.title }}
+                  </h3>
+                  <span class="tiny muted">{{ announcement.created_at|timesince }} ago</span>
+                </div>
+                <p class="mb-0 small" style="white-space:pre-line;margin-top:8px">{{ announcement.body }}</p>
+                <div class="tiny muted mt-2">Posted by {{ announcement.author.display_name }}</div>
+              </article>
+            {% empty %}
+              <p class="muted mb-0 small">No announcements yet. Organisers post updates here and they arrive in your notifications.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <aside class="stack sticky-side">
+        <div class="card card-pad">
+          <div class="row-between mb-2">
+            <span class="badge badge-{{ event.status|status_tone }}">{{ event.availability_label }}</span>
+            <strong style="font-size:1.05rem">{{ event.price_label }}</strong>
+          </div>
+
+          <div class="detail-list">
+            <div class="detail-item">
+              <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+              <div>
+                <div class="detail-label">Starts</div>
+                <div class="detail-value">{{ event.start_time|date:"D, d M Y" }}</div>
+                <div class="small muted">{{ event.start_time|date:"H:i" }} – {{ event.end_time|date:"H:i" }} · {{ event.duration_label }}</div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <svg aria-hidden="true"><use href="#i-pin"></use></svg>
+              <div>
+                <div class="detail-label">Venue</div>
+                <div class="detail-value">{{ event.venue.name }}</div>
+                <div class="small muted">{{ event.venue.full_address }}</div>
+                {% if event.venue.map_url %}<a class="small" href="{{ event.venue.map_url }}" rel="noopener">Open in maps</a>{% endif %}
+              </div>
+            </div>
+            <div class="detail-item">
+              <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+              <div>
+                <div class="detail-label">Registration closes</div>
+                <div class="detail-value">{{ event.registration_deadline|date:"d M Y, H:i" }}</div>
+                <div class="small muted">
+                  {% if event.registration_closed %}Closed{% else %}<span data-countdown="{{ event.registration_deadline|date:'c' }}" data-expired="Closed">—</span>{% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <svg aria-hidden="true"><use href="#i-users"></use></svg>
+              <div style="flex:1">
+                <div class="detail-label">Capacity</div>
+                <div class="detail-value">{{ event.seats_taken }} registered of {{ event.capacity }}</div>
+                <div class="progress progress-thin mt-1 {% if event.occupancy >= 100 %}tone-danger{% elif event.occupancy >= 80 %}tone-warning{% else %}tone-success{% endif %}">
+                  <span style="width:{{ event.occupancy }}%"></span>
+                </div>
+                <div class="small muted mt-1">{{ event.seats_remaining }} seat{{ event.seats_remaining|pluralize }} remaining{% if waitlist_count %} · {{ waitlist_count }} waitlisted{% endif %}</div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <svg aria-hidden="true"><use href="#i-user"></use></svg>
+              <div>
+                <div class="detail-label">Organiser</div>
+                <div class="detail-value">{{ event.organizer.display_name }}</div>
+                {% if event.organizer.profile.organization %}<div class="small muted">{{ event.organizer.profile.organization }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          {% if is_manager %}
+            <div class="stack-sm">
+              <a class="btn btn-dark btn-block" href="{% url 'events:manage' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-settings"></use></svg>Manage this event</a>
+              <a class="btn btn-secondary btn-block" href="{% url 'registrations:participants' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-users"></use></svg>Participants</a>
+              <a class="btn btn-ghost btn-block" href="{% url 'registrations:attendance' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-check"></use></svg>Attendance sheet</a>
+            </div>
+          {% elif registration and registration.is_active %}
+            <div class="alert alert-inline {% if registration.status == 'waitlisted' %}alert-warning{% else %}alert-success{% endif %}" style="margin-bottom:14px">
+              <svg aria-hidden="true"><use href="#{% if registration.status == 'waitlisted' %}i-clock{% else %}i-check{% endif %}"></use></svg>
+              <div class="alert-body">
+                <div class="alert-title">{{ registration.get_status_display }}</div>
+                <div class="small">{% if registration.status == 'waitlisted' %}Waitlist position {{ registration.waitlist_position }}{% else %}Ticket {{ registration.ticket_code }}{% endif %}</div>
+              </div>
+            </div>
+            <div class="stack-sm">
+              <a class="btn btn-secondary btn-block" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}"><svg aria-hidden="true"><use href="#i-ticket"></use></svg>View my ticket</a>
+              {% if registration.can_be_cancelled %}
+                <a class="btn btn-ghost btn-block" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}">Cancel registration</a>
+              {% endif %}
+            </div>
+          {% elif can_register %}
+            <a class="btn btn-primary btn-block btn-lg" href="{% url 'registrations:register' slug=event.slug %}">
+              <svg aria-hidden="true"><use href="#i-ticket"></use></svg>Register now
+            </a>
+            <p class="field-help text-center mt-2 mb-0">Free cancellation until the registration deadline.</p>
+          {% elif not current_user %}
+            <a class="btn btn-primary btn-block btn-lg" href="{% url 'registrations:register' slug=event.slug %}">
+              <svg aria-hidden="true"><use href="#i-ticket"></use></svg>Register now
+            </a>
+            <p class="small muted text-center mt-2 mb-0">
+              You will be asked to <a href="{% url 'accounts:login' %}?next={% url 'registrations:register' slug=event.slug %}">sign in</a>
+              or <a href="{% url 'accounts:register' %}">create a free account</a> first.
+            </p>
+          {% else %}
+            <button class="btn btn-secondary btn-block" disabled aria-disabled="true">{{ event.availability_label }}</button>
+            <p class="field-help text-center mt-2 mb-0">{{ register_reason }}</p>
+          {% endif %}
+        </div>
+
+        <div class="card card-pad">
+          <h3 style="font-size:.98rem">Registration snapshot</h3>
+          <div class="grid grid-4" style="gap:10px">
+            <div><div class="stat-value" style="font-size:1.3rem">{{ summary.confirmed }}</div><div class="tiny muted">Confirmed</div></div>
+            <div><div class="stat-value" style="font-size:1.3rem">{{ summary.waitlisted }}</div><div class="tiny muted">Waitlisted</div></div>
+            <div><div class="stat-value" style="font-size:1.3rem">{{ summary.cancelled }}</div><div class="tiny muted">Cancelled</div></div>
+            <div><div class="stat-value" style="font-size:1.3rem">{{ event.occupancy }}%</div><div class="tiny muted">Full</div></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

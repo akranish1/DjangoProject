@@ -1,0 +1,37 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Cancel {{ event.title }} · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Cancel event{% endblock %}
+{% block page_subheading %}{{ event.title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid" style="grid-template-columns:minmax(0,620px);gap:20px">
+  <div class="card">
+    <div class="card-header"><h2>Cancel this event</h2><span class="badge badge-danger">Irreversible for participants</span></div>
+    <div class="card-body">
+      <div class="alert alert-warning alert-inline">
+        <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+        <div class="alert-body">
+          <div class="alert-title">What happens when you cancel</div>
+          <ul class="small" style="margin:6px 0 0;padding-left:18px;list-style:disc">
+            <li>The event is marked <strong>Cancelled</strong> and hidden from discovery.</li>
+            <li>All {{ event.seats_taken }} active registration{{ event.seats_taken|pluralize }} will be cancelled.</li>
+            <li>Every registered participant receives an in-app notification with your reason.</li>
+          </ul>
+        </div>
+      </div>
+      <form method="post" data-confirm="Cancel “{{ event.title }}” and release all registrations?">
+        {% csrf_token %}
+        {% include "partials/form_errors.html" with form=form %}
+        <div class="form-grid">
+          {% include "partials/form_field.html" with field=form.reason wide=True %}
+          {% include "partials/form_field.html" with field=form.confirm wide=True %}
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-danger" type="submit"><svg aria-hidden="true"><use href="#i-alert"></use></svg>Cancel event</button>
+          <a class="btn btn-ghost" href="{% url 'events:manage' slug=event.slug %}">Keep the event</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

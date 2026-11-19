@@ -1,0 +1,52 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}Activity log · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Activity log{% endblock %}
+{% block page_subheading %}Every critical platform action{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div><h1>Audit trail</h1><p>{{ page_obj.paginator.count }} recorded action{{ page_obj.paginator.count|pluralize }}.</p></div>
+  <form method="get" class="form-row-inline">
+    <label class="visually-hidden" for="action-filter">Action type</label>
+    <select class="select-input select-sm" id="action-filter" name="action" onchange="this.form.submit()">
+      <option value="">All actions</option>
+      {% for value, label in action_choices %}<option value="{{ value }}" {% if action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <noscript><button class="btn btn-sm btn-secondary" type="submit">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="card card-flush">
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Platform activity log</caption>
+      <thead><tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Description</th><th scope="col" class="text-right">Target</th></tr></thead>
+      <tbody>
+        {% for activity in activities %}
+          <tr>
+            <td class="small muted nowrap">{{ activity.created_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {% if activity.actor %}
+                <div class="person">
+                  <span class="avatar avatar-sm">{{ activity.actor.initials }}</span>
+                  <div class="person-text"><div class="person-name">{{ activity.actor.display_name }}</div><div class="person-sub">{{ activity.actor.role_label }}</div></div>
+                </div>
+              {% else %}
+                <span class="tiny muted">System</span>
+              {% endif %}
+            </td>
+            <td><span class="badge badge-plain">{{ activity.get_action_display }}</span></td>
+            <td class="small">{{ activity.description }}</td>
+            <td class="text-right">{% if activity.target_url %}<a class="btn btn-xs btn-ghost" href="{{ activity.target_url }}">Open</a>{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">{% include "partials/empty_state.html" with icon="i-clock" title="No activity yet" message="Actions like publishing events, registrations and attendance marks are recorded here." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "partials/pagination.html" %}
+{% endblock %}

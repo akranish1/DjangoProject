@@ -1,0 +1,112 @@
+{% extends "base_shell.html" %}
+
+{% block body_class %}{% endblock %}
+
+{% block body %}
+<header class="site-header">
+  <div class="container container-wide site-header-inner">
+    <a class="brand" href="{% url 'core:home' %}">
+      <span class="brand-mark" aria-hidden="true"><svg><use href="#i-calendar"></use></svg></span>
+      <span>{{ SITE_NAME }}<small>Event management</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="{% url 'core:home' %}" {% if page == 'home' %}class="is-active" aria-current="page"{% endif %}>Home</a>
+      <a href="{% url 'events:list' %}" {% if page == 'events' %}class="is-active" aria-current="page"{% endif %}>Discover events</a>
+      {% if current_user %}
+        {% if current_user.is_participant %}<a href="{% url 'registrations:mine' %}" {% if page == 'my_registrations' %}class="is-active"{% endif %}>My tickets</a>{% endif %}
+        <a href="{% url 'dashboard:router' %}" {% if page == 'dashboard' %}class="is-active"{% endif %}>Dashboard</a>
+      {% else %}
+        <a href="{% url 'accounts:login' %}">Sign in</a>
+      {% endif %}
+    </nav>
+    <div class="header-actions">
+      {% if current_user %}
+        <a class="icon-btn" href="{% url 'announcements:notifications' %}" aria-label="Notifications{% if unread_notifications %}, {{ unread_notifications }} unread{% endif %}">
+          <svg aria-hidden="true"><use href="#i-bell"></use></svg>
+          <span class="bell-count" data-bell-count {% if not unread_notifications %}hidden{% endif %}>{{ unread_notifications }}</span>
+        </a>
+        {% if current_user.is_organizer or current_user.is_admin %}
+          <a class="btn btn-primary btn-sm" href="{% url 'events:create' %}"><svg aria-hidden="true"><use href="#i-plus"></use></svg>New event</a>
+        {% endif %}
+        <div class="dropdown" data-dropdown>
+          <button class="btn btn-ghost btn-sm" data-dropdown-trigger aria-expanded="false" aria-haspopup="true">
+            <span class="avatar avatar-sm">{{ current_user.initials }}</span>
+            <span class="hide-sm">{{ current_user.display_name }}</span>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-head">
+              <div class="person-name">{{ current_user.display_name }}</div>
+              <div class="person-sub">{{ current_user.role_label }}</div>
+            </div>
+            <a class="dropdown-item" href="{% url 'dashboard:router' %}"><svg aria-hidden="true"><use href="#i-grid"></use></svg>Dashboard</a>
+            <a class="dropdown-item" href="{% url 'accounts:profile' %}"><svg aria-hidden="true"><use href="#i-user"></use></svg>Profile &amp; settings</a>
+            <a class="dropdown-item" href="{% url 'announcements:notifications' %}"><svg aria-hidden="true"><use href="#i-bell"></use></svg>Notifications</a>
+            <div class="dropdown-sep"></div>
+            <form method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button class="dropdown-item" type="submit"><svg aria-hidden="true"><use href="#i-logout"></use></svg>Sign out</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <a class="btn btn-ghost btn-sm" href="{% url 'accounts:login' %}">Sign in</a>
+        <a class="btn btn-primary btn-sm" href="{% url 'accounts:register' %}">Get started</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container container-wide">
+    <div class="footer-grid">
+      <div>
+        <div class="brand" style="color:#fff">
+          <span class="brand-mark" aria-hidden="true"><svg><use href="#i-calendar"></use></svg></span>
+          <span style="color:#fff">{{ SITE_NAME }}<small style="color:var(--ink-400)">Event management</small></span>
+        </div>
+        <p class="mt-2" style="max-width:34ch;color:var(--ink-400)">{{ SITE_TAGLINE }}</p>
+        <div class="row" style="gap:8px">
+          <span class="badge badge-plain" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#dbe2ee">Django</span>
+          <span class="badge badge-plain" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#dbe2ee">Server-rendered</span>
+        </div>
+      </div>
+      <div>
+        <h4>Discover</h4>
+        <a href="{% url 'events:list' %}">All events</a>
+        <a href="{% url 'events:list' %}?date=week">This week</a>
+        <a href="{% url 'events:list' %}?availability=available">Available seats</a>
+        <a href="{% url 'events:list' %}?sort=popular">Most popular</a>
+      </div>
+      <div>
+        <h4>Account</h4>
+        {% if current_user %}
+          <a href="{% url 'dashboard:router' %}">Dashboard</a>
+          <a href="{% url 'registrations:mine' %}">My tickets</a>
+          <a href="{% url 'accounts:profile' %}">Profile</a>
+          <a href="{% url 'accounts:password_change' %}">Change password</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}">Sign in</a>
+          <a href="{% url 'accounts:register' %}">Create an account</a>
+          <a href="{% url 'accounts:password_reset' %}">Forgot password</a>
+        {% endif %}
+      </div>
+      <div>
+        <h4>Organisers</h4>
+        <a href="{% url 'events:create' %}">Create an event</a>
+        <a href="{% url 'events:venues' %}">Venues</a>
+        <a href="{% url 'dashboard:organizer' %}">Organiser dashboard</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© {% now "Y" %} {{ SITE_NAME }} · Built with Django, custom CSS and vanilla JavaScript.</span>
+      <span class="row" style="gap:14px">
+        <a href="{% url 'accounts:password_reset' %}" style="display:inline">Need help signing in?</a>
+      </span>
+    </div>
+  </div>
+</footer>
+{% endblock %}

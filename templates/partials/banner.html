@@ -1,0 +1,11 @@
+{% comment %}Event banner: real image when uploaded, otherwise an original CSS gradient illustration.{% endcomment %}
+<div class="banner {{ event.banner_theme }} {% if banner_class %}{{ banner_class }}{% endif %}">
+  {% if event.banner %}
+    <img src="{{ event.banner.url }}" alt="Banner for {{ event.title }}" loading="lazy">
+  {% else %}
+    <span class="visually-hidden">Decorative banner for {{ event.title }}</span>
+    <span class="banner-glyph" aria-hidden="true">
+      <svg><use href="#i-{{ event.category.icon|default:'spark' }}"></use></svg>
+    </span>
+  {% endif %}
+</div>

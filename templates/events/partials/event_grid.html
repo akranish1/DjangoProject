@@ -1,0 +1,12 @@
+{% load ui %}
+{% if events %}
+  <div class="grid-3">
+    {% for event in events %}
+      {% include "partials/event_card.html" with event=event %}
+    {% endfor %}
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-search" title="No events matched your filters" message="Try a different keyword, widen the date range or clear the filters to see everything that is live." %}
+  <div class="text-center mt-2"><a class="btn btn-secondary" href="{% url 'events:list' %}">Clear all filters</a></div>
+{% endif %}

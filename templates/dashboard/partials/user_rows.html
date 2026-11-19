@@ -1,0 +1,41 @@
+{% load ui %}
+{% if users %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Platform users</caption>
+      <thead><tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Activity</th><th scope="col">Joined</th><th scope="col">Status</th><th scope="col" class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for user in users %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm">{% if user.profile.avatar %}<img src="{{ user.profile.avatar.url }}" alt="">{% else %}{{ user.initials }}{% endif %}</span>
+                <div class="person-text">
+                  <div class="person-name">{{ user.display_name }}</div>
+                  <div class="person-sub">{{ user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-plain badge-brand">{{ user.role_label }}</span></td>
+            <td class="small muted">{{ user.event_count }} event{{ user.event_count|pluralize }} · {{ user.registration_count }} reg.</td>
+            <td class="small muted">{{ user.date_joined|date:"d M Y" }}</td>
+            <td><span class="badge badge-{% if user.is_active %}success{% else %}danger{% endif %}">{% if user.is_active %}Active{% else %}Deactivated{% endif %}</span></td>
+            <td>
+              <div class="cell-actions">
+                <a class="btn btn-xs btn-secondary" href="{% url 'dashboard:admin_user' pk=user.pk %}">Manage</a>
+                <form method="post" action="{% url 'dashboard:admin_toggle_user' pk=user.pk %}" data-confirm="{% if user.is_active %}Deactivate{% else %}Activate{% endif %} {{ user.display_name }}?">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button class="btn btn-xs btn-ghost" type="submit">{% if user.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-users" title="No users match" message="Adjust the role, status or search filters to find accounts." %}
+{% endif %}

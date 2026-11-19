@@ -1,0 +1,54 @@
+{% load ui %}
+{% if registrations %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Your registrations</caption>
+      <thead>
+        <tr>
+          <th scope="col">Event</th><th scope="col">Ticket</th><th scope="col">Status</th>
+          <th scope="col">Attendance</th><th scope="col">Registered</th><th scope="col" class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for registration in registrations %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm {{ registration.event.banner_theme }}"><svg aria-hidden="true" style="width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ registration.event.category.icon }}"></use></svg></span>
+                <div class="person-text">
+                  <div class="person-name truncate"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></div>
+                  <div class="person-sub">{{ registration.event.start_time|date:"d M Y, H:i" }} · {{ registration.event.venue.name }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="mono small">{{ registration.ticket_code }}</td>
+            <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+            <td>
+              {% if registration.attendance %}
+                <span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}</span>
+              {% elif registration.status == 'cancelled' %}
+                <span class="tiny muted">—</span>
+              {% elif registration.event.is_upcoming %}
+                <span class="tiny muted">Awaiting event</span>
+              {% else %}
+                <span class="badge badge-plain">Not marked</span>
+              {% endif %}
+            </td>
+            <td class="small muted">{{ registration.registered_at|date:"d M Y" }}</td>
+            <td>
+              <div class="cell-actions">
+                <a class="btn btn-xs btn-secondary" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}">Ticket</a>
+                {% if registration.can_be_cancelled %}
+                  <a class="btn btn-xs btn-ghost" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}" style="color:var(--danger-fg)">Cancel</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-ticket" title="Nothing here yet" message="When you register for an event it will show up in this list with its ticket and live status." action_url="/events/" action_label="Discover events" %}
+{% endif %}

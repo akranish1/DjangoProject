@@ -1,0 +1,29 @@
+{% load ui %}
+{% if page_obj.paginator.num_pages > 1 %}
+  <nav class="pagination" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+      <a href="{% query_with_page page_obj.previous_page_number %}" data-page-link="{{ page_obj.previous_page_number }}" aria-label="Previous page">
+        <svg aria-hidden="true" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><use href="#i-arrow-left"></use></svg>
+      </a>
+    {% else %}
+      <span class="is-disabled" aria-hidden="true">‹</span>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}
+        <span class="is-active" aria-current="page">{{ num }}</span>
+      {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+        <a href="{% query_with_page num %}" data-page-link="{{ num }}">{{ num }}</a>
+      {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+        <span class="ellipsis" aria-hidden="true">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <a href="{% query_with_page page_obj.next_page_number %}" data-page-link="{{ page_obj.next_page_number }}" aria-label="Next page">
+        <svg aria-hidden="true" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><use href="#i-arrow-right"></use></svg>
+      </a>
+    {% else %}
+      <span class="is-disabled" aria-hidden="true">›</span>
+    {% endif %}
+  </nav>
+  <p class="text-center small muted mt-2">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}</p>
+{% endif %}

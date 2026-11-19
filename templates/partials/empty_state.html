@@ -1,0 +1,7 @@
+{% comment %}Usage: {% include "partials/empty_state.html" with icon="i-calendar" title="No events yet" message="…" %}{% endcomment %}
+<div class="empty">
+  <div class="empty-art"><svg aria-hidden="true"><use href="#{{ icon|default:'i-calendar' }}"></use></svg></div>
+  <h3>{{ title|default:"Nothing here yet" }}</h3>
+  {% if message %}<p>{{ message }}</p>{% endif %}
+  {% if action_url and action_label %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>

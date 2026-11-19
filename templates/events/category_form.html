@@ -1,0 +1,39 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}{% if category %}Edit {{ category.name }}{% else %}New category{% endif %} · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}{% if category %}Edit category{% else %}New category{% endif %}{% endblock %}
+{% block page_subheading %}Colour and icon are used on event cards and filters{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid" style="grid-template-columns:minmax(0,620px);gap:20px">
+  <div class="card">
+    <div class="card-header"><h2>Category</h2></div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/form_errors.html" with form=form %}
+        <div class="form-grid">
+          {% include "partials/form_field.html" with field=form.name wide=True %}
+          {% include "partials/form_field.html" with field=form.description wide=True %}
+        </div>
+        <div class="form-grid cols-2 mt-3">
+          {% include "partials/form_field.html" with field=form.color %}
+          {% include "partials/form_field.html" with field=form.icon %}
+        </div>
+        <div class="panel mt-3">
+          <div class="row" style="gap:12px">
+            <span class="avatar" style="background:{{ category.color|default:'#6366f1' }}"><svg aria-hidden="true" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ category.icon|default:'spark' }}"></use></svg></span>
+            <div>
+              <div class="detail-value">Preview</div>
+              <div class="small muted">Chip styling used on the discovery page</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Save category</button>
+          <a class="btn btn-ghost" href="{% url 'events:categories' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Message participants · {{ event.title }}{% endblock %}
+{% block page_heading %}Message participants{% endblock %}
+{% block page_subheading %}{{ event.title }} · {{ event.seats_taken }} recipient{{ event.seats_taken|pluralize }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid" style="grid-template-columns:minmax(0,680px);gap:20px">
+  <div class="card">
+    <div class="card-header"><h2>Send an in-app notification</h2><span class="badge badge-brand">No email required</span></div>
+    <div class="card-body">
+      <p class="small muted">This reaches every participant with an active registration — confirmed, attended or waitlisted. It is recorded on the platform activity log.</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+          <div class="field">
+            <label for="title">Subject <span class="req" aria-hidden="true">*</span></label>
+            <input class="text-input" id="title" name="title" maxlength="160" required minlength="3" placeholder="e.g. Venue change: new gate opens at 8:00 AM">
+          </div>
+          <div class="field">
+            <label for="message">Message <span class="req" aria-hidden="true">*</span></label>
+            <textarea class="textarea-input" id="message" name="message" rows="6" maxlength="400" required minlength="5" data-counter="true" placeholder="Short, actionable update for your attendees…"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit"><svg aria-hidden="true"><use href="#i-bell"></use></svg>Send notification</button>
+          <a class="btn btn-ghost" href="{% url 'events:manage' slug=event.slug %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <h3 style="font-size:1rem">Prefer a public announcement?</h3>
+    <p class="small muted">Announcements are shown on the event page as well as sent as notifications — ideal for schedule or logistics updates everyone should be able to read later.</p>
+    <a class="btn btn-secondary" href="{% url 'announcements:create' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-megaphone"></use></svg>Write an announcement</a>
+  </div>
+</div>
+{% endblock %}

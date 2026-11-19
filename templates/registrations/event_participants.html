@@ -1,0 +1,47 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}Participants · {{ event.title }}{% endblock %}
+{% block page_heading %}Participants{% endblock %}
+{% block page_subheading %}{{ event.title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row-between mb-3">
+  <div>
+    <a class="btn btn-sm btn-ghost" href="{% url 'events:manage' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>Back to manage</a>
+  </div>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'registrations:attendance' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-check"></use></svg>Attendance sheet</a>
+    <a class="btn btn-secondary" href="{% url 'registrations:export' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Export CSV</a>
+  </div>
+</div>
+
+<div class="grid grid-4 mb-3">
+  <div class="stat"><div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div></div><div class="stat-value">{{ summary.confirmed }}</div><div class="stat-label">Confirmed</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div><div class="stat-value">{{ summary.attended }}</div><div class="stat-label">Attended</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-clock"></use></svg></div></div><div class="stat-value">{{ summary.waitlisted }}</div><div class="stat-label">Waitlisted</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-danger"><svg aria-hidden="true"><use href="#i-x"></use></svg></div></div><div class="stat-value">{{ summary.cancelled }}</div><div class="stat-label">Cancelled</div></div>
+</div>
+
+<div class="card card-flush">
+  <div class="card-header">
+    <div class="tabs" style="border:0" role="tablist" aria-label="Participant status filters">
+      <a class="tab {% if status == 'active' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=active">Active</a>
+      <a class="tab {% if status == 'confirmed' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=confirmed">Confirmed</a>
+      <a class="tab {% if status == 'attended' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=attended">Attended</a>
+      <a class="tab {% if status == 'waitlisted' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=waitlisted">Waitlisted</a>
+      <a class="tab {% if status == 'cancelled' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=cancelled">Cancelled</a>
+      <a class="tab {% if status == 'all' %}is-active{% endif %}" href="{% url 'registrations:participants' slug=event.slug %}?status=all">Everyone</a>
+    </div>
+    <form method="get" class="form-row-inline" role="search">
+      <input type="hidden" name="status" value="{{ status }}">
+      <label class="visually-hidden" for="participant-search">Search participants</label>
+      <input class="text-input text-sm" id="participant-search" type="search" name="q" value="{{ q }}" placeholder="Name, email or ticket…" style="width:230px">
+      <button class="btn btn-sm btn-secondary" type="submit">Search</button>
+    </form>
+  </div>
+  <div data-async-region data-async-url="{% url 'registrations:participants' slug=event.slug %}">
+    {% include "registrations/partials/participant_rows.html" %}
+  </div>
+</div>
+{% endblock %}

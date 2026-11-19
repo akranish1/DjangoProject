@@ -1,0 +1,67 @@
+{% extends "base_shell.html" %}
+
+{% block title %}Create your account · {{ SITE_NAME }}{% endblock %}
+
+{% block body %}
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <a class="brand" href="{% url 'core:home' %}" style="color:#fff">
+      <span class="brand-mark" style="background:rgba(255,255,255,.18);box-shadow:none" aria-hidden="true"><svg><use href="#i-calendar"></use></svg></span>
+      <span style="color:#fff">{{ SITE_NAME }}<small style="color:#dbe4ff">Event management</small></span>
+    </a>
+    <div>
+      <span class="eyebrow" style="color:#dbe4ff">Join the platform</span>
+      <h2 style="font-size:2.1rem;max-width:24ch">Run events people actually show up to.</h2>
+      <p style="color:#e0e7ff;max-width:44ch">Create a participant account to discover and register, or an organiser account to publish events, manage capacity and take attendance.</p>
+      <div class="auth-points mt-3">
+        <div class="auth-point"><svg aria-hidden="true"><use href="#i-shield"></use></svg><div><strong>Secure by default</strong><span>Role-based permissions enforced on the server for every request.</span></div></div>
+        <div class="auth-point"><svg aria-hidden="true"><use href="#i-ticket"></use></svg><div><strong>Tickets you can trust</strong><span>Unique ticket codes, waitlists and honest availability indicators.</span></div></div>
+      </div>
+    </div>
+    <div class="auth-quote">
+      <p style="margin:0;color:#fff">Join existing organisers and participants already using {{ SITE_NAME }}.</p>
+    </div>
+  </aside>
+
+  <main class="auth-main" id="main-content">
+    <div class="auth-card">
+      <div class="card">
+        <div class="card-body">
+          <h1 style="font-size:1.55rem;margin-bottom:6px">Create your account</h1>
+          <p class="muted">It takes less than a minute.</p>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-error alert-inline" role="alert">
+              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+              <div class="alert-body">{% for error in form.non_field_errors %}{{ error }}{% endfor %}</div>
+            </div>
+          {% endif %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="form-grid cols-2">
+              {% include "partials/form_field.html" with field=form.first_name %}
+              {% include "partials/form_field.html" with field=form.last_name %}
+            </div>
+            <div class="form-grid mt-3">
+              {% include "partials/form_field.html" with field=form.username wide=True %}
+              {% include "partials/form_field.html" with field=form.email wide=True %}
+              {% include "partials/form_field.html" with field=form.role wide=True %}
+            </div>
+            <div class="form-grid cols-2 mt-3">
+              {% include "partials/form_field.html" with field=form.password1 %}
+              {% include "partials/form_field.html" with field=form.password2 %}
+            </div>
+            <div class="mt-3">{% include "partials/form_field.html" with field=form.terms %}</div>
+            <button class="btn btn-primary btn-block btn-lg mt-3" type="submit">Create account <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+          </form>
+
+          <div class="divider"></div>
+          <p class="text-center small mb-0">Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a></p>
+        </div>
+      </div>
+      <p class="tiny muted text-center mt-3">Organiser accounts can create events immediately. Administrator access is granted by an existing administrator.</p>
+    </div>
+  </main>
+</div>
+{% endblock %}

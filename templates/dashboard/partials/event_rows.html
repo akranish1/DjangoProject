@@ -1,0 +1,43 @@
+{% load ui %}
+{% if events %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">All platform events</caption>
+      <thead><tr><th scope="col">Event</th><th scope="col">Organiser</th><th scope="col">Venue</th><th scope="col">Starts</th><th scope="col">Fill</th><th scope="col">Status</th><th scope="col" class="text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm {{ event.banner_theme }}"><svg aria-hidden="true" style="width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ event.category.icon }}"></use></svg></span>
+                <div class="person-text">
+                  <div class="person-name truncate"><a href="{{ event.get_absolute_url }}">{{ event.title }}</a></div>
+                  <div class="person-sub">{{ event.category.name }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small">{{ event.organizer.display_name }}</td>
+            <td class="small muted">{{ event.venue.name }}<div class="tiny">{{ event.venue.city }}</div></td>
+            <td class="small muted">{{ event.start_time|date:"d M Y, H:i" }}</td>
+            <td>
+              <div class="meter">
+                <div class="meter-top"><span>{{ event.seats_taken }}/{{ event.capacity }}</span><span>{{ event.occupancy }}%</span></div>
+                <div class="progress progress-thin {% if event.is_full %}tone-danger{% elif event.occupancy >= 80 %}tone-warning{% else %}tone-success{% endif %}"><span style="width:{{ event.occupancy }}%"></span></div>
+              </div>
+            </td>
+            <td><span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span></td>
+            <td>
+              <div class="cell-actions">
+                <a class="btn btn-xs btn-secondary" href="{% url 'events:manage' slug=event.slug %}">Manage</a>
+                <a class="btn btn-xs btn-ghost" href="{% url 'registrations:participants' slug=event.slug %}">Participants</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-calendar" title="No events match" message="Adjust the filters to review events across the platform." %}
+{% endif %}

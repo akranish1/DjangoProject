@@ -1,0 +1,9 @@
+{% comment %}Renders non-field errors for any bound form. Usage: {% include "partials/form_errors.html" with form=form %}{% endcomment %}
+{% if form.non_field_errors %}
+  <div class="alert alert-error alert-inline" role="alert">
+    <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+    <div class="alert-body">
+      {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+    </div>
+  </div>
+{% endif %}

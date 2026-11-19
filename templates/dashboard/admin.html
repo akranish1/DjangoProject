@@ -1,0 +1,195 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui humanize %}
+
+{% block title %}Platform overview · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Platform overview{% endblock %}
+{% block page_subheading %}Administrator statistics from live records{% endblock %}
+{% block sidebar_context %}Administrator{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <h1>Platform health</h1>
+    <p>{{ user_stats.total|intcomma }} users · {{ event_stats.total }} events · {{ registration_stats.total|intcomma }} registrations</p>
+  </div>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'dashboard:export_users' %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Users CSV</a>
+    <a class="btn btn-secondary" href="{% url 'dashboard:export_registrations' %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Registrations CSV</a>
+    <a class="btn btn-primary" href="{% url 'dashboard:admin_users' %}"><svg aria-hidden="true"><use href="#i-users"></use></svg>Manage users</a>
+  </div>
+</div>
+
+<div class="grid grid-4 mb-2">
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></div><span class="badge badge-success">+{{ user_stats.new_week }} this week</span></div>
+    <div class="stat-value">{{ user_stats.total|intcomma }}</div><div class="stat-label">Users</div>
+    <div class="stat-meta">{{ user_stats.organizers }} organisers · {{ user_stats.participants }} participants</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-calendar"></use></svg></div><span class="badge badge-plain">{{ event_stats.upcoming }} upcoming</span></div>
+    <div class="stat-value">{{ event_stats.total }}</div><div class="stat-label">Events</div>
+    <div class="stat-meta">{{ event_stats.published }} published · {{ event_stats.drafts }} drafts · {{ event_stats.completed }} completed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-ticket"></use></svg></div><span class="badge badge-success">+{{ registration_stats.new_week }} this week</span></div>
+    <div class="stat-value">{{ registration_stats.total|intcomma }}</div><div class="stat-label">Registrations</div>
+    <div class="stat-meta">{{ registration_stats.confirmed }} confirmed · {{ registration_stats.waitlisted }} waitlisted</div>
+  </div>
+  <div class="stat">
+    <div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-chart"></use></svg></div></div>
+    <div class="stat-value">{{ fill_rate }}%</div><div class="stat-label">Seats filled</div>
+    <div class="stat-meta">{{ registration_stats.attended }} attendance record{{ registration_stats.attended|pluralize }} · {{ registration_stats.cancelled }} cancellations</div>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <div><h2>Growth in the last 14 days</h2><span class="small muted">New sign-ups and registrations per day</span></div>
+    <span class="badge badge-plain">Server aggregated</span>
+  </div>
+  <div class="card-body">
+    <div data-chart data-chart-url="{% url 'dashboard:admin_chart' %}"><div class="skeleton" style="height:210px"></div></div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 380px;align-items:start;gap:20px">
+  <div class="stack">
+    <div class="card card-flush">
+      <div class="card-header"><h2>Recent events</h2><a class="btn btn-sm btn-secondary" href="{% url 'dashboard:admin_events' %}">All events</a></div>
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Recently created events</caption>
+          <thead><tr><th scope="col">Event</th><th scope="col">Organiser</th><th scope="col">Starts</th><th scope="col">Fill</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            {% for event in recent_events %}
+              <tr>
+                <td><a href="{{ event.get_absolute_url }}">{{ event.title }}</a><div class="tiny muted">{{ event.category.name }} · {{ event.venue.city }}</div></td>
+                <td class="small">{{ event.organizer.display_name }}</td>
+                <td class="small muted">{{ event.start_time|date:"d M Y" }}</td>
+                <td>
+                  <div class="meter">
+                    <div class="meter-top"><span>{{ event.seats_taken }}/{{ event.capacity }}</span><span>{{ event.occupancy }}%</span></div>
+                    <div class="progress progress-thin {% if event.is_full %}tone-danger{% elif event.occupancy >= 80 %}tone-warning{% else %}tone-success{% endif %}"><span style="width:{{ event.occupancy }}%"></span></div>
+                  </div>
+                </td>
+                <td><span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5"><div class="empty" style="border:0"><p class="mb-0">No events created yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card-flush">
+      <div class="card-header"><h2>Recent registrations</h2><a class="btn btn-sm btn-secondary" href="{% url 'dashboard:admin_registrations' %}">All registrations</a></div>
+      <div class="table-wrap">
+        <table class="table table-narrow">
+          <caption class="visually-hidden">Recent registrations across the platform</caption>
+          <thead><tr><th scope="col">Ticket</th><th scope="col">Participant</th><th scope="col">Event</th><th scope="col">Status</th><th scope="col">When</th></tr></thead>
+          <tbody>
+            {% for registration in recent_registrations %}
+              <tr>
+                <td class="mono small">{{ registration.ticket_code }}</td>
+                <td class="small">{{ registration.participant.display_name }}</td>
+                <td class="small truncate" style="max-width:200px">{{ registration.event.title }}</td>
+                <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+                <td class="small muted">{{ registration.registered_at|timesince }} ago</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5"><div class="empty" style="border:0"><p class="mb-0">No registrations yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card-flush">
+      <div class="card-header"><h2>Top events by registrations</h2></div>
+      <div class="table-wrap">
+        <table class="table table-narrow">
+          <caption class="visually-hidden">Most registered events</caption>
+          <thead><tr><th scope="col">Event</th><th scope="col">Category</th><th scope="col">Active registrations</th><th scope="col">Capacity</th></tr></thead>
+          <tbody>
+            {% for event in top_events %}
+              <tr>
+                <td><a href="{{ event.get_absolute_url }}">{{ event.title }}</a></td>
+                <td><span class="badge badge-plain">{{ event.category.name }}</span></td>
+                <td><strong>{{ event.fill }}</strong></td>
+                <td class="small muted">{{ event.capacity }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="border:0"><p class="mb-0">Not enough data yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem">Activity log</h2><a class="small" href="{% url 'dashboard:admin_activity' %}">Full log</a></div>
+      <div class="card-body">
+        <div class="timeline">
+          {% for activity in activities %}
+            <div class="timeline-item">
+              <div class="timeline-time">{{ activity.created_at|date:"d M, H:i" }} · {{ activity.actor.display_name|default:"System" }}</div>
+              <div class="small">{{ activity.description }}</div>
+            </div>
+          {% empty %}
+            <p class="small muted mb-0">No activity recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Newest users</h3>
+      <div class="stack-sm">
+        {% for user in recent_users %}
+          <div class="row-between">
+            <div class="person">
+              <span class="avatar avatar-sm">{{ user.initials }}</span>
+              <div class="person-text"><div class="person-name">{{ user.display_name }}</div><div class="person-sub">{{ user.role_label }}</div></div>
+            </div>
+            <a class="btn btn-xs btn-ghost" href="{% url 'dashboard:admin_user' pk=user.pk %}">View</a>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No users yet.</p>
+        {% endfor %}
+      </div>
+      <a class="btn btn-secondary btn-block mt-2" href="{% url 'dashboard:admin_users' %}">Manage users</a>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Top organisers</h3>
+      <div class="stack-sm">
+        {% for organizer in top_organizers %}
+          <div class="row-between small">
+            <span class="truncate" style="max-width:60%">{{ organizer.display_name }}</span>
+            <span class="muted">{{ organizer.event_count }} event{{ organizer.event_count|pluralize }} · {{ organizer.registration_count }} reg.</span>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No organiser activity yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Registrations by category</h3>
+      <div class="stack-sm">
+        {% for category in category_split %}
+          <div>
+            <div class="row-between small"><span>{{ category.name }}</span><span class="muted">{{ category.seats }} seats</span></div>
+            <div class="progress progress-thin mt-1"><span style="width:{% widthratio category.seats registration_stats.total 100 %}%"></span></div>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No category data yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

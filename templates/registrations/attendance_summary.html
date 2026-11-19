@@ -1,0 +1,33 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Attendance summary · {{ event.title }}{% endblock %}
+{% block page_heading %}Attendance summary{% endblock %}
+{% block page_subheading %}{{ event.title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row-between mb-3">
+  <a class="btn btn-sm btn-ghost" href="{% url 'registrations:attendance' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>Back to sheet</a>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'registrations:export' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Export CSV</a>
+    <a class="btn btn-secondary" href="{% url 'events:manage' slug=event.slug %}">Manage event</a>
+  </div>
+</div>
+
+<div data-async-region data-async-url="{% url 'registrations:attendance_summary' slug=event.slug %}">
+  {% include "registrations/partials/attendance_summary.html" %}
+</div>
+
+<div class="grid grid-2 mt-3">
+  <div class="card card-pad">
+    <h3 style="font-size:1rem">Capacity vs attendance</h3>
+    <div class="row-between small muted mb-1"><span>{{ summary.attended }} attended</span><span>{{ summary.capacity }} seat capacity</span></div>
+    <div class="progress"><span style="width:{% widthratio summary.attended summary.capacity 100 %}%"></span></div>
+    <p class="small muted mt-2 mb-0">{{ summary.cancelled }} registration{{ summary.cancelled|pluralize }} cancelled · {{ summary.waitlisted }} still waitlisted.</p>
+  </div>
+  <div class="card card-pad">
+    <h3 style="font-size:1rem">Show-up health</h3>
+    <div class="row-between small muted mb-1"><span>{{ summary.attendance_rate }}% showed up</span><span>{{ summary.marked }} marked</span></div>
+    <div class="progress tone-{% if summary.attendance_rate >= 75 %}success{% elif summary.attendance_rate >= 50 %}warning{% else %}danger{% endif %}"><span style="width:{{ summary.attendance_rate }}%"></span></div>
+    <p class="small muted mt-2 mb-0">Present and late counts are treated as attendance.</p>
+  </div>
+</div>
+{% endblock %}

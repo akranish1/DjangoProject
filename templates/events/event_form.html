@@ -1,0 +1,124 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}{% if event %}Edit {{ event.title }}{% else %}Create event{% endif %} · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}{% if event %}Edit event{% else %}Create a new event{% endif %}{% endblock %}
+{% block page_subheading %}{% if event %}{{ event.title }}{% else %}Add the details, schedule and capacity — publish when you are ready{% endif %}{% endblock %}
+
+{% block dashboard_content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% include "partials/form_errors.html" with form=form %}
+  <div class="grid" style="grid-template-columns:minmax(0,1fr) 330px;align-items:start;gap:22px">
+    <div class="stack">
+      <div class="card">
+        <div class="card-header"><h2>Event details</h2>{% if event %}<span class="badge badge-{{ event.status|status_tone }}">{{ event.get_status_display }}</span>{% endif %}</div>
+        <div class="card-body">
+          <div class="form-grid">
+            {% include "partials/form_field.html" with field=form.title wide=True %}
+            {% include "partials/form_field.html" with field=form.summary wide=True %}
+            {% include "partials/form_field.html" with field=form.description wide=True %}
+          </div>
+          <div class="form-grid cols-2 mt-3">
+            {% include "partials/form_field.html" with field=form.category %}
+            {% include "partials/form_field.html" with field=form.venue %}
+          </div>
+          <div class="note mt-2">
+            <svg aria-hidden="true"><use href="#i-info"></use></svg>
+            <span>Need a new venue? <a href="{% url 'events:venue_create' %}?next={{ request.path }}">Add a venue</a> first — it will appear in this dropdown.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Dates &amp; capacity</h2>
+            <span class="small muted">End time must be after the start; registration must close before the event begins.</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-grid cols-2">
+            {% include "partials/form_field.html" with field=form.start_time %}
+            {% include "partials/form_field.html" with field=form.end_time %}
+            {% include "partials/form_field.html" with field=form.registration_deadline %}
+            {% include "partials/form_field.html" with field=form.capacity %}
+          </div>
+          <div class="form-grid cols-2 mt-3">
+            {% include "partials/form_field.html" with field=form.price %}
+            {% include "partials/form_field.html" with field=form.status %}
+          </div>
+          {% if form.is_featured %}<div class="mt-3">{% include "partials/form_field.html" with field=form.is_featured %}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Running order</h2>
+            <span class="small muted">Optional sessions appear as a timeline on the event page. They must fall inside the event window.</span>
+          </div>
+        </div>
+        <div class="card-body">
+          {{ formset.management_form }}
+          {% if formset.non_form_errors %}
+            <div class="alert alert-error alert-inline" role="alert">
+              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+              <div class="alert-body">{% for error in formset.non_form_errors %}{{ error }} {% endfor %}</div>
+            </div>
+          {% endif %}
+          <div class="stack">
+            {% for session_form in formset %}
+              <fieldset>
+                <legend>Session {{ forloop.counter }}</legend>
+                <div class="form-grid cols-2">
+                  {% include "partials/form_field.html" with field=session_form.title %}
+                  {% include "partials/form_field.html" with field=session_form.speaker %}
+                  {% include "partials/form_field.html" with field=session_form.start_time %}
+                  {% include "partials/form_field.html" with field=session_form.end_time %}
+                  {% include "partials/form_field.html" with field=session_form.location %}
+                  {% include "partials/form_field.html" with field=session_form.order %}
+                  {% include "partials/form_field.html" with field=session_form.description wide=True %}
+                </div>
+                {% if session_form.instance.pk %}
+                  <div class="mt-2 check-row is-error">
+                    {{ session_form.DELETE }}
+                    <label for="{{ session_form.DELETE.id_for_label }}">Delete this session</label>
+                  </div>
+                {% endif %}
+                {% for hidden in session_form.hidden_fields %}{{ hidden }}{% endfor %}
+              </fieldset>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="stack sticky-side">
+      <div class="card card-pad">
+        <h3 style="font-size:1rem">Banner image</h3>
+        <p class="small muted">Optional. Without an upload we generate an original gradient banner from the event category.</p>
+        {% if event and event.banner %}
+          <img src="{{ event.banner.url }}" alt="Current banner" style="border-radius:var(--radius);border:1px solid var(--border);margin-bottom:12px">
+        {% endif %}
+        <div class="file-drop">{% include "partials/form_field.html" with field=form.banner %}</div>
+      </div>
+
+      <div class="card card-pad">
+        <h3 style="font-size:1rem">Publish checklist</h3>
+        <ul class="stack-sm small muted">
+          <li class="row" style="gap:8px"><svg aria-hidden="true" style="width:15px;height:15px;stroke:var(--success-fg);fill:none;stroke-width:2"><use href="#i-check"></use></svg>Registration deadline in the future</li>
+          <li class="row" style="gap:8px"><svg aria-hidden="true" style="width:15px;height:15px;stroke:var(--success-fg);fill:none;stroke-width:2"><use href="#i-check"></use></svg>Capacity fits inside the venue</li>
+          <li class="row" style="gap:8px"><svg aria-hidden="true" style="width:15px;height:15px;stroke:var(--success-fg);fill:none;stroke-width:2"><use href="#i-check"></use></svg>Sessions inside the event window</li>
+        </ul>
+        <div class="stack-sm mt-3">
+          <button class="btn btn-primary btn-block" type="submit">
+            <svg aria-hidden="true"><use href="#i-check"></use></svg>{% if event %}Save changes{% else %}Save event{% endif %}
+          </button>
+          <a class="btn btn-ghost btn-block" href="{% if event %}{% url 'events:manage' slug=event.slug %}{% else %}{% url 'dashboard:organizer' %}{% endif %}">Cancel</a>
+        </div>
+      </div>
+    </aside>
+  </div>
+</form>
+{% endblock %}

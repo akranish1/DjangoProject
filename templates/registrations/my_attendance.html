@@ -1,0 +1,20 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Attendance history · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Attendance history{% endblock %}
+{% block page_subheading %}Every event you registered for, and whether you showed up{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-4 mb-3">
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div><div class="stat-value">{{ stats.attended }}</div><div class="stat-label">Events attended</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-calendar"></use></svg></div></div><div class="stat-value">{{ stats.upcoming }}</div><div class="stat-label">Upcoming tickets</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-danger"><svg aria-hidden="true"><use href="#i-x"></use></svg></div></div><div class="stat-value">{{ stats.no_show }}</div><div class="stat-label">No shows</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-info"></use></svg></div></div><div class="stat-value">{{ stats.cancelled }}</div><div class="stat-label">Cancelled</div></div>
+</div>
+
+<div class="card card-flush">
+  <div class="card-header"><h2>History</h2><a class="btn btn-sm btn-secondary" href="{% url 'registrations:mine' %}">My registrations</a></div>
+  <div data-async-region data-async-url="{% url 'registrations:my_attendance' %}">
+    {% include "registrations/partials/attendance_history.html" %}
+  </div>
+</div>
+{% endblock %}

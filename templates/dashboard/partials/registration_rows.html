@@ -1,0 +1,29 @@
+{% load ui %}
+{% if registrations %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">All registrations</caption>
+      <thead><tr><th scope="col">Ticket</th><th scope="col">Participant</th><th scope="col">Event</th><th scope="col">Status</th><th scope="col">Attendance</th><th scope="col">Registered</th></tr></thead>
+      <tbody>
+        {% for registration in registrations %}
+          <tr>
+            <td class="mono small">{{ registration.ticket_code }}</td>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm">{{ registration.participant.initials }}</span>
+                <div class="person-text"><div class="person-name">{{ registration.participant.display_name }}</div><div class="person-sub">{{ registration.participant.email }}</div></div>
+              </div>
+            </td>
+            <td class="small truncate" style="max-width:220px"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></td>
+            <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+            <td>{% if registration.attendance %}<span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}</span>{% else %}<span class="tiny muted">—</span>{% endif %}</td>
+            <td class="small muted">{{ registration.registered_at|date:"d M Y, H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-ticket" title="No registrations match" message="Try a different status or search term." %}
+{% endif %}

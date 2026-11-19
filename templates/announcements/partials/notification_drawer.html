@@ -1,0 +1,18 @@
+{% load ui %}
+{% with drawer_notifications=current_user.notifications.all|slice:":5" %}
+  {% for notification in drawer_notifications %}
+    <div class="notif-item {% if not notification.is_read %}is-unread{% endif %}" data-notification-id="{{ notification.pk }}" data-link="{{ notification.link }}" tabindex="0" role="button">
+      <span class="notif-icon"><svg aria-hidden="true"><use href="#i-{{ notification.icon }}"></use></svg></span>
+      <div style="min-width:0;flex:1">
+        <div class="row-between" style="gap:8px">
+          <strong class="truncate">{{ notification.title }}</strong>
+          {% if not notification.is_read %}<span class="notif-dot" data-unread-dot aria-label="Unread"></span>{% endif %}
+        </div>
+        <div class="small muted clamp-2">{{ notification.message }}</div>
+        <div class="tiny muted">{{ notification.created_at|timesince }} ago</div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="panel text-center small muted">You are all caught up — no notifications yet.</div>
+  {% endfor %}
+{% endwith %}

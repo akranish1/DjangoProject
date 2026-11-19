@@ -1,0 +1,15 @@
+{% if messages %}
+  <div class="messages" role="status" aria-live="polite">
+    {% for message in messages %}
+      {% with level=message.tags|default:'info' %}
+        <div class="alert alert-{{ level|cut:'error ' }}">
+          <svg aria-hidden="true"><use href="#{% if 'success' in level %}i-check{% elif 'error' in level or 'danger' in level %}i-alert{% elif 'warning' in level %}i-alert{% else %}i-info{% endif %}"></use></svg>
+          <div class="alert-body">{{ message }}</div>
+          <button type="button" class="alert-close" aria-label="Dismiss message">
+            <svg aria-hidden="true" style="width:16px;height:16px"><use href="#i-x"></use></svg>
+          </button>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+{% endif %}

@@ -1,0 +1,38 @@
+{% load ui %}
+{% if registrations %}
+  <div class="table-wrap">
+    <table class="table">
+      <caption class="visually-hidden">Attendance history</caption>
+      <thead><tr><th scope="col">Event</th><th scope="col">Date</th><th scope="col">Registration</th><th scope="col">Attendance</th><th scope="col">Checked in</th><th scope="col" class="text-right">Ticket</th></tr></thead>
+      <tbody>
+        {% for registration in registrations %}
+          <tr>
+            <td>
+              <div class="person">
+                <span class="avatar avatar-sm {{ registration.event.banner_theme }}"><svg aria-hidden="true" style="width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ registration.event.category.icon }}"></use></svg></span>
+                <div class="person-text">
+                  <div class="person-name truncate"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></div>
+                  <div class="person-sub">{{ registration.event.venue.city }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small muted">{{ registration.event.start_time|date:"d M Y" }}</td>
+            <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+            <td>
+              {% if registration.attendance %}
+                <span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}</span>
+              {% else %}
+                <span class="tiny muted">Not marked</span>
+              {% endif %}
+            </td>
+            <td class="small muted">{% if registration.attendance.checked_in_at %}{{ registration.attendance.checked_in_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</td>
+            <td class="text-right"><a class="btn btn-xs btn-ghost" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}">View</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "partials/pagination.html" %}
+{% else %}
+  {% include "partials/empty_state.html" with icon="i-check" title="No attendance history yet" message="Once you attend an event, your check-in record appears here." action_url="/events/" action_label="Find an event" %}
+{% endif %}

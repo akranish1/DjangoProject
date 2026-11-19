@@ -1,0 +1,54 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}New announcement · {{ event.title }}{% endblock %}
+{% block page_heading %}Post an announcement{% endblock %}
+{% block page_subheading %}{{ event.title }} · {{ event.seats_taken }} registered participant{{ event.seats_taken|pluralize }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid" style="grid-template-columns:minmax(0,720px) 320px;align-items:start;gap:20px">
+  <div class="card">
+    <div class="card-header"><h2>Announcement</h2><span class="badge badge-brand">Visible on the event page</span></div>
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/form_errors.html" with form=form %}
+        <div class="form-grid">
+          {% include "partials/form_field.html" with field=form.title wide=True %}
+          {% include "partials/form_field.html" with field=form.body wide=True %}
+        </div>
+        <div class="stack-sm mt-3">
+          {% include "partials/form_field.html" with field=form.is_pinned %}
+          {% include "partials/form_field.html" with field=form.notify %}
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit"><svg aria-hidden="true"><use href="#i-megaphone"></use></svg>Publish announcement</button>
+          <a class="btn btn-ghost" href="{% url 'events:manage' slug=event.slug %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Good announcements include</h3>
+      <ul class="stack-sm small muted">
+        <li>• What changed and who it affects</li>
+        <li>• Exact times, gates or meeting points</li>
+        <li>• What attendees should bring or do next</li>
+      </ul>
+    </div>
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Already posted</h3>
+      <div class="stack-sm">
+        {% for existing in event.announcements.all|slice:":4" %}
+          <div class="panel">
+            <div class="row-between"><strong class="small">{{ existing.title }}</strong><span class="tiny muted">{{ existing.created_at|date:"d M" }}</span></div>
+            <div class="tiny muted">{{ existing.notified_count }} notified</div>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No announcements for this event yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

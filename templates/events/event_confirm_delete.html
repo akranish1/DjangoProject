@@ -1,0 +1,24 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Delete {{ event.title }} · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}Delete event{% endblock %}
+{% block page_subheading %}{{ event.title }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid" style="grid-template-columns:minmax(0,620px);gap:20px">
+  <div class="card">
+    <div class="card-header"><h2>Delete this event permanently</h2><span class="badge badge-danger">Cannot be undone</span></div>
+    <div class="card-body">
+      <p>Deleting <strong>{{ event.title }}</strong> removes the event, its {{ event.sessions.count }} session{{ event.sessions.count|pluralize }} and all {{ event.registrations.count }} registration record{{ event.registrations.count|pluralize }} including attendance history.</p>
+      <p class="small muted">Prefer cancelling? Cancelling keeps the history and notifies participants automatically.</p>
+      <form method="post" data-confirm="Permanently delete “{{ event.title }}” and all of its registrations?">
+        {% csrf_token %}
+        <div class="form-actions">
+          <button class="btn btn-danger" type="submit"><svg aria-hidden="true"><use href="#i-trash"></use></svg>Delete permanently</button>
+          <a class="btn btn-secondary" href="{% url 'events:cancel' slug=event.slug %}">Cancel instead</a>
+          <a class="btn btn-ghost" href="{% url 'events:manage' slug=event.slug %}">Go back</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

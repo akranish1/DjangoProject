@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ SITE_NAME }} · {{ SITE_TAGLINE }}{% endblock %}
+{% block meta_description %}Discover events near you, register in seconds and keep track of every ticket. Organisers get schedules, capacity control, attendance and announcements in one place.{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container container-wide">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Event management platform</span>
+        <h1>Plan, publish and pack out <span class="text-gradient">unforgettable events</span>.</h1>
+        <p class="lead">
+          {{ SITE_NAME }} gives organisers a clean control room — schedules, venues, capacity and attendance —
+          while participants get a fast, friendly way to discover events and keep every ticket in one place.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="{% url 'events:list' %}">
+            <svg aria-hidden="true"><use href="#i-search"></use></svg>Discover events
+          </a>
+          {% if current_user %}
+            <a class="btn btn-secondary btn-lg" href="{% url 'dashboard:router' %}">
+              <svg aria-hidden="true"><use href="#i-grid"></use></svg>Go to my dashboard
+            </a>
+          {% else %}
+            <a class="btn btn-secondary btn-lg" href="{% url 'accounts:register' %}">
+              <svg aria-hidden="true"><use href="#i-plus"></use></svg>Create a free account
+            </a>
+          {% endif %}
+        </div>
+        <div class="hero-proof">
+          <div>
+            <div class="stat-value">{{ stats.events|intcomma }}</div>
+            <div class="small muted">Upcoming events</div>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.participants|intcomma }}</div>
+            <div class="small muted">Active participants</div>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.organizers|intcomma }}</div>
+            <div class="small muted">Organisers</div>
+          </div>
+          <div>
+            <div class="stat-value">{{ stats.venues|intcomma }}</div>
+            <div class="small muted">Venues</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 520 380" role="img" aria-label="Illustration of an event dashboard">
+          <defs>
+            <linearGradient id="hg1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient>
+            <linearGradient id="hg2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+          </defs>
+          <rect x="18" y="18" width="484" height="344" rx="26" fill="#fff" stroke="#e6e9f0"/>
+          <rect x="18" y="18" width="484" height="58" rx="26" fill="#f8fafc"/>
+          <circle cx="48" cy="47" r="6" fill="#f87171"/><circle cx="68" cy="47" r="6" fill="#fbbf24"/><circle cx="88" cy="47" r="6" fill="#34d399"/>
+          <rect x="44" y="100" width="182" height="16" rx="8" fill="#eef1f6"/>
+          <rect x="44" y="128" width="120" height="12" rx="6" fill="#eef1f6"/>
+          <rect x="44" y="160" width="200" height="104" rx="18" fill="url(#hg1)" opacity="0.92"/>
+          <rect x="60" y="184" width="88" height="10" rx="5" fill="#fff" opacity="0.85"/>
+          <rect x="60" y="204" width="140" height="8" rx="4" fill="#fff" opacity="0.55"/>
+          <rect x="60" y="222" width="96" height="8" rx="4" fill="#fff" opacity="0.4"/>
+          <rect x="60" y="240" width="52" height="14" rx="7" fill="#fff" opacity="0.8"/>
+          <rect x="264" y="100" width="216" height="72" rx="16" fill="#f8fafc" stroke="#e6e9f0"/>
+          <rect x="282" y="118" width="96" height="10" rx="5" fill="#cfd6e4"/>
+          <rect x="282" y="138" width="150" height="8" rx="4" fill="#e6e9f0"/>
+          <rect x="264" y="188" width="216" height="76" rx="16" fill="#f8fafc" stroke="#e6e9f0"/>
+          <rect x="282" y="206" width="70" height="10" rx="5" fill="#cfd6e4"/>
+          <rect x="282" y="226" width="180" height="8" rx="4" fill="#e6e9f0"/>
+          <rect x="282" y="242" width="120" height="8" rx="4" fill="#e6e9f0"/>
+          <rect x="44" y="284" width="436" height="52" rx="16" fill="url(#hg2)" opacity="0.16"/>
+          <rect x="64" y="300" width="120" height="10" rx="5" fill="#0f766e" opacity="0.35"/>
+          <rect x="64" y="318" width="220" height="8" rx="4" fill="#0f766e" opacity="0.22"/>
+          <circle cx="430" cy="310" r="16" fill="#fff" stroke="#e6e9f0"/>
+          <path d="M424 310l5 5 9-10" stroke="#10b981" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container container-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Upcoming</span>
+        <h2>Featured events starting soon</h2>
+        <p>Hand-picked events with open registration, straight from the platform.</p>
+      </div>
+      <a class="btn btn-secondary" href="{% url 'events:list' %}">Browse all events <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </div>
+
+    {% if featured_events %}
+      <div class="grid-3">
+        {% for event in featured_events %}
+          {% include "partials/event_card.html" with event=event %}
+        {% endfor %}
+      </div>
+    {% else %}
+      {% include "partials/empty_state.html" with icon="i-calendar" title="No published events yet" message="Once organisers publish their events they will appear right here." action_url="/accounts/register/" action_label="Create the first account" %}
+    {% endif %}
+  </div>
+</section>
+
+{% if categories %}
+<section class="section section-alt">
+  <div class="container container-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Browse by interest</span>
+        <h2>Find events in your world</h2>
+      </div>
+    </div>
+    <div class="row" style="gap:12px">
+      {% for category in categories %}
+        <a class="chip" href="{% url 'events:list' %}?category={{ category.slug }}">
+          <svg aria-hidden="true"><use href="#i-{{ category.icon }}"></use></svg>
+          {{ category.name }}
+          <span class="badge badge-plain" style="padding:1px 8px">{{ category.live_events }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container container-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">How it works</span>
+        <h2>From discovery to attendance in three steps</h2>
+      </div>
+    </div>
+    <div class="grid-3">
+      <article class="card card-pad">
+        <div class="step-num">1</div>
+        <h3>Discover with real filters</h3>
+        <p class="muted">Search by keyword, category, venue or date. Every card shows live availability and registration status pulled from the database.</p>
+        <div class="row"><span class="badge badge-brand">Search</span><span class="badge badge-info">Filters</span><span class="badge badge-plain">Sorting</span></div>
+      </article>
+      <article class="card card-pad">
+        <div class="step-num">2</div>
+        <h3>Register safely</h3>
+        <p class="muted">Duplicate registrations, deadlines and capacity are enforced on the server with transactional seat accounting. Full events offer a managed waitlist.</p>
+        <div class="row"><span class="badge badge-success">No overbooking</span><span class="badge badge-warning">Waitlist</span></div>
+      </article>
+      <article class="card card-pad">
+        <div class="step-num">3</div>
+        <h3>Track everything</h3>
+        <p class="muted">Tickets, attendance history, organiser announcements and in-app notifications — all in your dashboard.</p>
+        <div class="row"><span class="badge badge-info">Notifications</span><span class="badge badge-plain">Attendance</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container container-wide">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Built for every role</span>
+        <h2>Three dashboards, one platform</h2>
+        <p>Permissions are enforced server-side — every role only sees and manages what it owns.</p>
+      </div>
+    </div>
+    <div class="grid-3">
+      <article class="card card-pad">
+        <div class="feature-icon"><svg aria-hidden="true"><use href="#i-calendar"></use></svg></div>
+        <h3>Organisers</h3>
+        <ul class="stack-sm muted small">
+          <li>✓ Create events with schedules, venues and capacity</li>
+          <li>✓ Publish, cancel, duplicate and broadcast updates</li>
+          <li>✓ Attendance sheets, check-in by ticket code, CSV export</li>
+        </ul>
+      </article>
+      <article class="card card-pad">
+        <div class="feature-icon"><svg aria-hidden="true"><use href="#i-ticket"></use></svg></div>
+        <h3>Participants</h3>
+        <ul class="stack-sm muted small">
+          <li>✓ Discover and filter events that match your interests</li>
+          <li>✓ Register, join waitlists and cancel eligible tickets</li>
+          <li>✓ Attendance history and organiser announcements</li>
+        </ul>
+      </article>
+      <article class="card card-pad">
+        <div class="feature-icon"><svg aria-hidden="true"><use href="#i-shield"></use></svg></div>
+        <h3>Administrators</h3>
+        <ul class="stack-sm muted small">
+          <li>✓ Platform-wide user, event and registration statistics</li>
+          <li>✓ Role changes, account activation and moderation</li>
+          <li>✓ Activity log for every critical action</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container container-wide">
+    <div class="card card-pad" style="background:linear-gradient(120deg,var(--ink-900),#312e81 55%,#4f46e5);border:0;color:#fff">
+      <div class="row-between">
+        <div style="max-width:52ch">
+          <h2 style="color:#fff">Ready to run your next event properly?</h2>
+          <p style="color:#c7d2fe;margin-bottom:0">Create an organiser account, add your venue and publish in minutes. Participants register themselves — you keep the control.</p>
+        </div>
+        <div class="row-end">
+          <a class="btn btn-secondary btn-lg" href="{% url 'accounts:register' %}">Get started free</a>
+          <a class="btn btn-ghost btn-lg" style="color:#e0e7ff" href="{% url 'events:list' %}">See what's live</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

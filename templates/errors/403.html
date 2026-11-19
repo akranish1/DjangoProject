@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Access denied · {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:70px">
+  <div class="container text-center" style="max-width:620px">
+    <div class="empty-art" style="margin:0 auto 18px"><svg aria-hidden="true"><use href="#i-shield"></use></svg></div>
+    <h1>403 · Access denied</h1>
+    <p class="lead">Your account does not have permission to view or change this resource. Organisers can only manage their own events.</p>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-primary" href="{% url 'dashboard:router' %}">Go to my dashboard</a>
+      <a class="btn btn-secondary" href="{% url 'events:list' %}">Browse events</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

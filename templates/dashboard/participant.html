@@ -1,0 +1,145 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui humanize %}
+
+{% block title %}My dashboard · {{ SITE_NAME }}{% endblock %}
+{% block page_heading %}My dashboard{% endblock %}
+{% block page_subheading %}Tickets, attendance and updates{% endblock %}
+{% block sidebar_context %}Participant space{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-title-row">
+  <div>
+    <h1>Hello, {{ current_user.first_name|default:current_user.username }}</h1>
+    <p>{{ upcoming_count }} upcoming event{{ upcoming_count|pluralize }} · {{ unread }} unread notification{{ unread|pluralize }}</p>
+  </div>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'registrations:mine' %}"><svg aria-hidden="true"><use href="#i-ticket"></use></svg>My registrations</a>
+    <a class="btn btn-primary" href="{% url 'events:list' %}"><svg aria-hidden="true"><use href="#i-search"></use></svg>Discover events</a>
+  </div>
+</div>
+
+<div class="grid grid-4 mb-3">
+  <div class="stat"><div class="stat-top"><div class="stat-icon"><svg aria-hidden="true"><use href="#i-ticket"></use></svg></div></div><div class="stat-value">{{ stats.confirmed }}</div><div class="stat-label">Confirmed tickets</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-success"><svg aria-hidden="true"><use href="#i-check"></use></svg></div></div><div class="stat-value">{{ stats.attended }}</div><div class="stat-label">Events attended</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-warning"><svg aria-hidden="true"><use href="#i-clock"></use></svg></div></div><div class="stat-value">{{ stats.waitlisted }}</div><div class="stat-label">Waitlisted</div></div>
+  <div class="stat"><div class="stat-top"><div class="stat-icon tone-info"><svg aria-hidden="true"><use href="#i-bell"></use></svg></div></div><div class="stat-value">{{ unread }}</div><div class="stat-label">Unread updates</div></div>
+</div>
+
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 360px;align-items:start;gap:20px">
+  <div class="stack">
+    <div class="card">
+      <div class="card-header"><h2>Your next events</h2><span class="small muted">Sorted by start time</span></div>
+      <div class="card-body stack">
+        {% for registration in upcoming %}
+          <article class="panel">
+            <div class="row-between" style="gap:14px">
+              <div class="row" style="gap:14px;min-width:0">
+                <span class="avatar {{ registration.event.banner_theme }}" style="border-radius:12px"><svg aria-hidden="true" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8"><use href="#i-{{ registration.event.category.icon }}"></use></svg></span>
+                <div style="min-width:0">
+                  <div class="person-name truncate"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></div>
+                  <div class="small muted">{{ registration.event.start_time|date:"D, d M Y · H:i" }} · {{ registration.event.venue.name }}, {{ registration.event.venue.city }}</div>
+                  <div class="row mt-1" style="gap:8px">
+                    <span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span>
+                    <span class="badge badge-plain mono">{{ registration.ticket_code }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="row-end">
+                <a class="btn btn-sm btn-secondary" href="{% url 'registrations:detail' ticket_code=registration.ticket_code %}">Ticket</a>
+                {% if registration.can_be_cancelled %}
+                  <a class="btn btn-sm btn-ghost" href="{% url 'registrations:cancel' ticket_code=registration.ticket_code %}" style="color:var(--danger-fg)">Cancel</a>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        {% empty %}
+          {% include "partials/empty_state.html" with icon="i-calendar" title="No upcoming events" message="You have no active registrations. Discover events that match your interests." action_url="/events/" action_label="Discover events" %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-flush">
+      <div class="card-header"><h2>Recent registrations</h2><a class="btn btn-sm btn-secondary" href="{% url 'registrations:mine' %}">View all</a></div>
+      <div class="table-wrap">
+        <table class="table table-narrow">
+          <caption class="visually-hidden">Recent registrations</caption>
+          <thead><tr><th scope="col">Event</th><th scope="col">Ticket</th><th scope="col">Status</th><th scope="col">Registered</th></tr></thead>
+          <tbody>
+            {% for registration in registrations %}
+              <tr>
+                <td class="truncate" style="max-width:260px"><a href="{{ registration.event.get_absolute_url }}">{{ registration.event.title }}</a></td>
+                <td class="mono small">{{ registration.ticket_code }}</td>
+                <td><span class="badge badge-{{ registration.status_tone }}">{{ registration.get_status_display }}</span></td>
+                <td class="small muted">{{ registration.registered_at|date:"d M Y" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="empty" style="border:0"><p class="mb-0">No registrations yet.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if recommendations %}
+      <div class="card">
+        <div class="card-header"><h2>Recommended for you</h2><span class="small muted">Published events you have not joined</span></div>
+        <div class="card-body">
+          <div class="grid-3">
+            {% for event in recommendations %}{% include "partials/event_card.html" with event=event %}{% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card">
+      <div class="card-header"><h2 style="font-size:1rem">Notifications</h2><a class="small" href="{% url 'announcements:notifications' %}">See all</a></div>
+      <div class="notif-list">
+        {% for notification in notifications %}
+          <div class="notif-item {% if not notification.is_read %}is-unread{% endif %}">
+            <span class="notif-icon"><svg aria-hidden="true"><use href="#i-{{ notification.icon }}"></use></svg></span>
+            <div>
+              <div class="person-name small">{{ notification.title }}</div>
+              <div class="tiny muted clamp-2">{{ notification.message }}</div>
+              <div class="tiny muted">{{ notification.created_at|timesince }} ago</div>
+            </div>
+          </div>
+        {% empty %}
+          <div style="padding:16px"><p class="small muted mb-0">No notifications yet.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Announcements for you</h3>
+      <div class="stack-sm">
+        {% for announcement in announcements %}
+          <div class="panel">
+            <div class="row-between"><strong class="small truncate" style="max-width:70%">{{ announcement.title }}</strong><span class="tiny muted">{{ announcement.created_at|date:"d M" }}</span></div>
+            <div class="tiny muted">{{ announcement.event.title }}</div>
+            <a class="small" href="{% url 'announcements:detail' pk=announcement.pk %}">Read</a>
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">No announcements from your events yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Attendance history</h3>
+      <div class="stack-sm">
+        {% for registration in attendance_history %}
+          <div class="row-between small">
+            <span class="truncate" style="max-width:60%">{{ registration.event.title }}</span>
+            {% if registration.attendance %}<span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}</span>{% else %}<span class="badge badge-plain">Not marked</span>{% endif %}
+          </div>
+        {% empty %}
+          <p class="small muted mb-0">Your attendance history will appear here after your first event.</p>
+        {% endfor %}
+      </div>
+      <a class="btn btn-ghost btn-block mt-2" href="{% url 'registrations:my_attendance' %}">Full history</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

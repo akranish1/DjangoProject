@@ -1,0 +1,116 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load ui %}
+
+{% block title %}Attendance · {{ event.title }}{% endblock %}
+{% block page_heading %}Attendance sheet{% endblock %}
+{% block page_subheading %}{{ event.title }} · {{ event.start_time|date:"d M Y" }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row-between mb-3">
+  <a class="btn btn-sm btn-ghost" href="{% url 'events:manage' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>Back to manage</a>
+  <div class="row-end">
+    <a class="btn btn-secondary" href="{% url 'registrations:attendance_summary' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-chart"></use></svg>Summary</a>
+    <a class="btn btn-secondary" href="{% url 'registrations:export' slug=event.slug %}"><svg aria-hidden="true"><use href="#i-download"></use></svg>Export CSV</a>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:minmax(0,1fr) 340px;align-items:start;gap:20px">
+  <div class="stack">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Mark attendance</h2>
+          <span class="small muted">Tick present/late/absent for each confirmed participant and save in one go.</span>
+        </div>
+        <span class="badge badge-plain">{{ registrations|length }} on the list</span>
+      </div>
+      <form method="post" action="{% url 'registrations:attendance_save' slug=event.slug %}">
+        {% csrf_token %}
+        <div class="table-wrap">
+          <table class="table">
+            <caption class="visually-hidden">Attendance sheet for {{ event.title }}</caption>
+            <thead>
+              <tr><th scope="col">Participant</th><th scope="col">Ticket</th><th scope="col">Status</th><th scope="col">Note</th><th scope="col">Recorded</th></tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                {% with registration=row.registration %}
+                <tr data-registration-row="{{ registration.ticket_code }}">
+                  <td>
+                    <div class="person">
+                      <span class="avatar avatar-sm">{{ registration.participant.initials }}</span>
+                      <div class="person-text">
+                        <div class="person-name">{{ registration.participant.display_name }}</div>
+                        <div class="person-sub">{{ registration.participant.email }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mono small">{{ registration.ticket_code }}</td>
+                  <td>
+                    <label class="visually-hidden" for="{{ row.status_field.id_for_label }}">Attendance status for {{ registration.participant.display_name }}</label>
+                    {{ row.status_field }}
+                  </td>
+                  <td>{{ row.note_field }}</td>
+                  <td data-attendance-cell>
+                    {% if registration.attendance %}
+                      <span class="badge badge-{{ registration.attendance.tone }}">{{ registration.attendance.get_status_display }}{% if registration.attendance.checked_in_at %} · {{ registration.attendance.checked_in_at|date:"H:i" }}{% endif %}</span>
+                    {% else %}
+                      <span class="tiny muted">Not marked</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endwith %}
+              {% empty %}
+                <tr><td colspan="5">{% include "partials/empty_state.html" with icon="i-users" title="No participants to mark" message="Once participants register they will appear here for check-in." %}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if registrations %}
+          <div class="card-footer row-between">
+            <span class="small muted">{{ summary.marked }} of {{ registrations|length }} already recorded · {{ summary.unmarked }} pending.</span>
+            <button class="btn btn-primary" type="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Save attendance</button>
+          </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <aside class="stack sticky-side">
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Quick check-in</h3>
+      <p class="small muted">Type or scan a ticket code at the door — the participant is marked present with a timestamp.</p>
+      <form method="post" action="{% url 'registrations:check_in' slug=event.slug %}" data-check-in-form>
+        {% csrf_token %}
+        <div class="field">
+          <label for="ticket_code">Ticket code</label>
+          <input class="text-input mono" id="ticket_code" name="ticket_code" placeholder="EV-XXXXXXX" autocomplete="off" required>
+        </div>
+        <button class="btn btn-primary btn-block mt-2" type="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Check in</button>
+      </form>
+      <noscript><p class="field-help mt-2">JavaScript is off: the form still posts and confirms on the server.</p></noscript>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">Attendance snapshot</h3>
+      <div class="grid grid-4" style="gap:10px">
+        <div><div class="stat-value" style="font-size:1.3rem">{{ summary.present }}</div><div class="tiny muted">Present</div></div>
+        <div><div class="stat-value" style="font-size:1.3rem">{{ summary.late }}</div><div class="tiny muted">Late</div></div>
+        <div><div class="stat-value" style="font-size:1.3rem">{{ summary.absent }}</div><div class="tiny muted">Absent</div></div>
+        <div><div class="stat-value" style="font-size:1.3rem">{{ summary.excused }}</div><div class="tiny muted">Excused</div></div>
+      </div>
+      <div class="progress mt-3"><span style="width:{{ summary.attendance_rate }}%"></span></div>
+      <p class="small muted mt-2 mb-0">{{ summary.attendance_rate }}% attendance rate across {{ summary.marked }} marked record{{ summary.marked|pluralize }}.</p>
+    </div>
+
+    <div class="card card-pad">
+      <h3 style="font-size:1rem">How marking works</h3>
+      <ul class="stack-sm small muted">
+        <li>Present / late set a check-in timestamp automatically.</li>
+        <li>Marking attendance also sets the registration to <strong>Attended</strong>.</li>
+        <li>Only you (and platform admins) can change these records.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}
